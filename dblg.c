@@ -954,7 +954,6 @@ sendpublic(struct kreq *r, const struct user *u)
 		kjson_obj_open(&req);
 		json_putuser(&req, u, 1);
 		kjson_arrayp_open(&req, "entries");
-		first = 0;
 	}
 
 	ksql_stmt_free(stmt);
