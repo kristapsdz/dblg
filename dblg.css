@@ -1,0 +1,111 @@
+body, html						{ height: 100%; }
+body							{ margin: 0; 
+							  position: relative; }
+.hide							{ display: none; }
+#loading, #loaded					{ height: 100%; 
+							  width: 95%;
+							  margin-left: auto;
+							  margin-right: auto;
+							  position: relative; }
+#loggedin						{ max-width: 80em;
+							  width: 100%;
+							  margin-left: auto;
+							  margin-right: auto; }
+#loadingmsg, #login					{ position: absolute;
+							  top: 50%;
+							  left: 50%;
+							  max-width: 30em;
+							  width: 100%;
+							  transform: translate(-50%, -50%); }
+#loadingmsg						{ max-width: auto;
+							  width: auto; }
+.error							{ color: red; }
+#loggedin > input					{ display: none; }
+a							{ text-decoration: none; }
+#loggedin > input ~ div					{ max-height: 0;
+							  opacity: 0;
+							  transition: opacity 0.5s ease-in-out;
+				  			  overflow: hidden; }
+#show-admin:checked ~ #admin,
+#show-usermod:checked ~ #usermod,
+#show-entry:checked ~ #entry				{ opacity: 1; 
+							  max-height: 100em; }
+#loggedin > input ~ nav label				{ border-bottom: 2px solid transparent; 
+							  transition: border-bottom 0.2s ease-in-out;
+							  padding: 0 2pt;
+							  cursor: pointer; }
+#loggedin nav						{ margin-bottom: 8pt; 
+							  margin-top: 8pt;
+							  border-bottom: 2px solid rgba(255, 153, 0, 0.1); }
+#loggedin nav label + label				{ margin-left: 6pt; }
+#loggedin nav label:hover				{ border-bottom: 2px solid rgba(255, 153, 0, 0.4); }
+#show-admin:checked ~ nav #label-admin,
+#show-usermod:checked ~ nav #label-usermod,
+#show-entry:checked ~ nav #label-entry			{ border-bottom: 2px solid orange; }
+#usermod form + form					{ margin-top: 4pt; }
+#intro							{ display: flex; 
+							  align-items: center;
+							  padding: 8pt 2pt; }
+#intro > div:last-child					{ flex: 1; 
+							  text-align: right; }
+#intro .intro						{ font-size: 14pt; }
+#entry > div						{ padding-bottom: 1em; }
+#contentform						{ padding-bottom: 0; 
+							  margin-bottom: 0; }
+#submitform-existing a					{ color: blue; }
+
+fieldset						{ border: none;
+							  margin: 1em 0;
+							  padding: 0; }
+fieldset + .buttons					{ margin-top: -0.5em; 
+							  margin-bottom: 1em; }
+label.formlabel, fieldset label				{ color: #888; 
+						   	  display: block; 
+						 	  margin-bottom: 1pt; }
+fieldset select, 
+fieldset input, 
+fieldset textarea					{ font-size: inherit;
+							  font-weight: inherit;
+							  margin: 0;
+							  width: 100%;
+							  padding: 6pt;
+							  box-shadow: inset 0 0 2px #aaa;
+							  -moz-box-sizing: border-box;
+							  -webkit-box-sizing: border-box;
+							  box-sizing: border-box;
+							  border-radius: 4pt;
+							  font-family: inherit; }
+fieldset > * + *					{ margin-top: 0.5em; }
+fieldset select, 
+fieldset input, 
+fieldset textarea					{ border: 1px solid black; }
+button							{ color: rgba(0, 0, 0, 0.8);
+							  border: 0px none transparent;
+							  background-color: #D6D6D6;
+							  text-decoration: none;
+							  padding: 4pt 8pt;
+							  font-size: inherit;
+							  font-family: inherit;
+							  border-radius: 2pt; 
+							  white-space: nowrap;
+							  box-shadow: inset 0 0 2px #aaa;
+							  -moz-box-sizing: border-box;
+							  -webkit-box-sizing: border-box;
+							  box-sizing: border-box;
+							  text-align: center;
+							  cursor: pointer;
+							  -moz-user-select: none; }
+fieldset input[type="checkbox"]				{ width: auto; }
+button:hover						{ background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.1)); }
+button:active						{ box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.15) inset, 0px 0px 6px rgba(0, 0, 0, 0.2) inset; }
+button.primary						{ background-color: #0078E7;
+							  color: #FFF; }
+button[disabled]					{ opacity: 0.4; }
+button[disabled]:hover					{ background-image: none; }
+
+
+@media only screen and (max-width: 360px), only screen and (max-device-width: 360px) {
+#loggedin nav						{ text-align: center; }
+#entry .editor-toolbar a				{ width: 24px; }
+#entry .editor-toolbar i.separator			{ margin: 1pt; }
+}

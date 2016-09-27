@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta charset="utf-8" /> 
+		<title>dblg :: blogging interface</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+		<link rel="stylesheet" href="@HTURI@/dblg.css" />
+		<script src="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+		<script src="//cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/js-sha1/0.3.0/sha1.min.js"></script>
+		<script src="@HTURI@/dblg.min.js"></script>
+	</head>
+	<body>
+		<div class="hide" id="mapbox">
+			<div id="map">Loading...</div>
+		</div>
+		<section id="loading">
+			<div id="loadingmsg">
+				<i class="fa fa-pulse fa-spinner"></i>
+				Loading...
+			</div>
+		</section>
+		<section id="loaded">
+			<section id="login" class="hide">
+				<form class="styled" id="loginform" method="post" action="@CGIURI@/login.json">
+					<p class="error error400 hide">
+						Bad user and/or password.  Try again!
+					</p>
+					<fieldset>
+						<div>
+							<label for="loginform-email">E-mail address</label>
+							<div><input id="loginform-email" type="email" name="email" required="required" /></div>
+						</div>
+						<div>
+							<label for="loginform-password">Password</label>
+							<div><input id="loginform-password" type="password" name="pass" required="required" /></div>
+						</div>
+					</fieldset>
+					<div class="buttons">
+						<button type="submit" class="primary submit">
+							<i class="fa fa-check"></i>
+							Login
+						</button>
+						<button type="button" disabled="disabled" class="hide pending">
+							<i class="fa fa-pulse fa-spinner"></i>
+							Logging in...
+						</button>
+						<button type="button" id="usersite">
+							Cancel
+						</button>
+					</div>
+				</form>
+			</section>
+			<section id="loggedin" class="hide">
+				<input type="radio" name="shown" value="1" id="show-usermod" />
+				<input type="radio" name="shown" value="2" id="show-entry" checked="checked" />
+				<input type="radio" name="shown" value="3" id="show-admin" />
+				<section id="intro">
+					<div>
+						<button type="button" disabled="disabled" id="submitform-geolocate">
+							<i class="fa fa-globe"></i>
+							Adjust
+						</button>
+						<span id="submitform-geolocated" class="hide">
+							<i class="fa fa-fw fa-check-square-o"></i>
+							Location
+						</span>
+						<span id="submitform-ungeolocated" class="hide">
+							<i class="fa fa-fw fa-square-o"></i>
+							No location
+						</span>
+						<span id="submitform-geolocating" class="hide">
+							<i class="fa fa-fw fa-pulse fa-spinner"></i>
+							Locating
+						</span>
+					</div>
+					<div>
+						<button type="button" id="server">
+							<i class="fa fa-server"></i>
+							Server
+						</button>
+						<button type="button" class="primary" id="logout">
+							Logout
+						</button>
+					</div>
+				</section>
+				<nav>
+					<label id="label-entry" for="show-entry">
+						Publish entry
+					</label>
+					<label id="label-usermod" for="show-usermod">
+						User data
+					</label>
+					<label id="label-admin" for="show-admin">
+						User admin
+					</label>
+				</nav>
+				<div id="admin">
+					<ul id="userlist">
+						<li>
+							<a class="userlist-name userlist-email-link"></a>
+						</li>
+					</ul>
+					<form id="adduserform" method="post" action="@CGIURI@/adduser.json">
+						<p class="error error400 hide">
+							E-mail already exists.
+						</p>
+						<fieldset>
+							<div>
+								<label>E-mail</label>
+								<div><input type="email" placeholder="Login e-mail" name="email" required="required" /></div>
+							</div>
+							<div>
+								<label>Password</label>
+								<div><input type="password" placeholder="Login password" name="pass" required="required" /></div>
+							</div>
+							<div>
+								<label>
+									<input type="checkbox" name="admin" />
+									Administrator
+								</label>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-user"></i>
+								Create
+							</button>
+							<button type="button" disabled="disabled" class="pending hide">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Creating...
+							</button>
+						</div>
+					</form>
+				</div>
+				<div id="usermod">
+					<form id="modpassform" method="post" action="@CGIURI@/modpass.json">
+						<fieldset>
+							<div>
+								<label>Password</label>
+								<div><input type="password" placeholder="Login password" name="pass" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-lock"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="pending hide">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+					<form id="modlinkform" method="post" action="@CGIURI@/modlink.json">
+						<fieldset>
+							<div>
+								<label>User page</label>
+								<div><input type="url" id="user-input-link" name="link" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-link"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+					<form id="modemailform" method="post" action="@CGIURI@/modemail.json">
+						<fieldset>
+							<div>
+								<label>E-mail</label>
+								<div><input type="email" id="user-input-email" name="email" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-envelope-o"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+					<form id="modnameform" method="post" action="@CGIURI@/modname.json">
+						<fieldset>
+							<div>
+								<label>Public name</label>
+								<div><input type="text" id="user-input-name" name="name" required="required" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-user"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+					<form id="modcloudform" method="post" action="@CGIURI@/modcloud.json">
+						<fieldset>
+							<div>
+								<label>Cloud key</label>
+								<div><input type="text" id="user-input-cloudkey" name="cloudkey" placeholder="Cloud key" /></div>
+							</div>
+							<div>
+								<label>Cloud secret</label>
+								<div><input type="text" id="user-input-cloudsecret" name="cloudsecret" placeholder="Cloud secret" /></div>
+							</div>
+							<div>
+								<label>Cloud account name</label>
+								<div><input type="text" id="user-input-cloudname" name="cloudname" placeholder="Cloud name" /></div>
+							</div>
+							<div>
+								<label>Cloud folder path</label>
+								<div><input type="text" id="user-input-cloudpath" name="cloudpath" placeholder="Cloud path" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-cloud"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
+				</div>
+				<div id="entry">
+					<div id="submitform-existing">
+						<p>
+							<strong>
+								<i class="fa fa-exclamation-triangle"></i>
+								You are editing an existing blog entry!
+							</strong>
+							<a href="@HTURI@/dblg.html">Reset</a> and start a new entry.
+						</p>
+					</div>
+					<div id="mediaform">
+						<fieldset>
+							<div>
+								<label for="submitform-media">Upload media</label>
+								<div><input type="file" id="submitform-media" /></div>
+							</div>
+							<div>
+								<div><input type="text" id="submitform-media-result" placeholder="Waiting for upload..." readonly="readonly" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="button" class="submit" id="submitform-media-btn">
+								<i class="fa fa-cloud-upload"></i>
+								Submit
+							</button>
+							<button type="button" class="pending hide">
+								<i class="fa fa-spinner fa-pulse"></i>
+								Submitting... <span class="percentage"></span>%
+							</button>
+							<button type="button" disabled="disabled" id="submitform-clipboard" data-clipboard-target="#submitform-media-result">
+								<i class="fa fa-clipboard"></i>
+								Clipboard
+							</button>
+						</div>
+					</div>
+					<div id="contentform">
+						<label class="formlabel">Contents</label>
+						<textarea id="markdown"></textarea>
+					</div>
+					<form id="submitform" method="post" action="@CGIURI@/submit.json">
+						<input type="hidden" name="entryid" id="submitform-entryid" />
+						<input type="hidden" name="markdown" id="submitform-markdowninput" />
+						<input type="hidden" name="latitude" id="submitform-latitude" disabled="disabled" />
+						<input type="hidden" name="longitude" id="submitform-longitude" disabled="disabled" />
+						<fieldset>
+							<div>
+								<label for="submitform-title">Title</label>
+								<div><input id="submitform-title" type="text" name="title" required="required" /></div>
+							</div>
+							<div>
+								<label for="submitform-nocoords">
+									<input type="checkbox" id="submitform-nocoords" /> Hide location
+								</label>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="primary submit">
+								<i class="fa fa-send"></i>
+								Publish
+							</button>
+							<button type="button" disabled="disabled" class="primary hide pending">
+								<i class="fa fa-pulse fa-spinner"></i>
+								Publishing...
+							</button>
+							<button type="button" id="submitform-cancel">
+								Cancel
+							</button>
+						</div>
+					</form>
+				</div>
+			</section>
+		</section>
+	</body>
+</html>
