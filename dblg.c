@@ -201,6 +201,13 @@ static const char *const pages[PAGE__MAX] = {
 	"submit", /* PAGE_SUBMIT */
 };
 
+/* Forward declaration for attributes. */
+
+static void lwarnx(const char *, ...) 
+	__attribute__((format(printf, 1, 2)));
+static void linfo(const char *, ...) 
+	__attribute__((format(printf, 1, 2)));
+
 static void
 linfo(const char *fmt, ...)
 {
