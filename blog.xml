@@ -36,6 +36,8 @@
 					<div>
 						<a class="blog-canonlink"><i class="fa fa-fw fa-link"></i></a>
 						<a class="blog-coords"><i class="fa fa-fw fa-globe"></i></a>
+					</div>
+					<div>
 						<i class="fa fa-fw fa-clock-o"></i>
 						<a class="blog-author"></a>,
 						<span class="blog-date"></span>

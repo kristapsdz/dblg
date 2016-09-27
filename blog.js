@@ -291,7 +291,7 @@
 				}
 				list = cln.getElementsByClassName('blog-edit');
 				for (j = 0; j < list.length; j++)
-					list[j].href = '@HTURI@/blogger.html?' +
+					list[j].href = '@HTURI@/dblg.html?' +
 						'entryid=' + res.entries[i].id;
 			} else
 				hidec(cln, 'blog-control');
