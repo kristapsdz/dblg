@@ -54,6 +54,7 @@
 				</form>
 				<footer>
 					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
+					<a href="https://github.com/kristapsdz/dblg"><i class="fa fa-fw fa-github"></i></a>
 				</footer>
 			</section>
 			<section id="loggedin" class="hide">
@@ -317,6 +318,7 @@
 				</div>
 				<footer>
 					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
+					<a href="https://github.com/kristapsdz/dblg"><i class="fa fa-fw fa-github"></i></a>
 				</footer>
 			</section>
 		</section>
