@@ -1,5 +1,8 @@
 ## Synopsis
 
+This is a read-only repository mirror for dblg.
+There's nothing to say here yet---stay tuned!
+
 ## Installation
 
 ## License
