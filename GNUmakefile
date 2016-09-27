@@ -1,4 +1,49 @@
-.SUFFIXES:	.html .in.xml .xml .js .min.js
+.SUFFIXES: .html .in.xml .xml .js .min.js
+
+# File-system location (directory) of static media.
+# HTDOCS = $(PREFIX)
+#
+# URL location (path) of static media.
+# HTURI = /~kristaps
+#
+# File-system location (directory) of CGI script.
+# CGIBIN = $(PREFIX)
+#
+# File-system location of database.
+# DATADIR = $(PREFIX)
+#
+# Web-server relative location of system log file.
+# LOGFILE = $(PREFIX)/dblg_log
+#
+# If on a static architecture, -static; otherwise empty.
+# STATIC =
+#
+# Extract library -L flags.
+# LDFLAGS =
+#
+# Web-server relative location of DATADIR.
+# RDDIR = $(PREFIX)
+#
+# Name of installed CGI script.
+# CGINAME = dblg.cgi
+#
+# URL location (filename) of CGI script.
+# CGIURI = /~kristaps/$(CGINAME)
+#
+# Default password hash for administrator on installation.
+# AHASH = foobar
+#
+# If on an HTTPS-only installation, should be "-DSECURE".
+# SECURE =
+#
+# URI of server reports.
+# REPURI =
+#
+# URI of blog display.
+# BLOGURI =
+#
+# Main site that blog is sitting on.
+# SITEURI =
 
 ifeq ($(shell uname), Darwin)
 PREFIX		?= /Users/kristaps/Sites
@@ -15,6 +60,8 @@ CGIURI		 = /~kristaps/$(CGINAME)
 AHASH		 = foobar
 SECURE		 =
 REPURI	 	 =
+BLOGURI	 	 =
+SITEURI	 	 =
 else
 PREFIX	 	 = /var/www/vhosts/divelog.blue
 HTDOCS		 = $(PREFIX)/htdocs
@@ -31,6 +78,8 @@ CGIURI		 = /cgi-bin/$(CGINAME)
 AHASH		 = $$2b$$10$$rQrWpJndeJAcIumy3kxugu5Dwrbtl9OOfVc7gN/ITBwrATYFGsL3y
 SECURE		 = -DSECURE
 REPURI	 	 = $(HTURI)/report/report.html
+BLOGURI	 	 = $(HTURI)/blog.html
+SITEURI	 	 = $(HTURI)/index.html
 endif
 
 OBJS	 = dblg.o
@@ -38,8 +87,6 @@ HTMLS	 = dblg.html
 JSMINS	 = dblg.min.js
 CSSS	 = dblg.css
 AEMAIL	 = $(shell whoami)@$(shell hostname)
-SITEURI	 = $(HTURI)/index.html
-BLOGURI	 = $(HTURI)/blog.html
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
 CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
