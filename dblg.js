@@ -320,6 +320,12 @@
 			list = cln.getElementsByClassName('userlist-email-link');
 			for (j = 0; j < list.length; j++) 
 				attr(list[j], 'href', 'mailto:' + res.users[i].email);
+			list = cln.getElementsByClassName('userlist-admin');
+			for (j = 0; j < list.length; j++) 
+				if (res.users[i].attrs.admin)
+					show(list[j]);
+				else
+					hide(list[j]);
 			e.appendChild(cln);
 		}
 	}
@@ -327,6 +333,7 @@
 	function loadSuccess(resp)
 	{
 		var res = parser(resp);
+		var url;
 
 		if (null === res)
 			return;
@@ -379,19 +386,31 @@
 
 		if (null !== res.entry && 
 	   	    res.entry.user.id === res.user.id) {
+			url = '@BLOGURI@';
+			if (url.length)
+				url += '?entryid=' + res.entry.id;
 			mde.value(res.entry.content);
 			attr('submitform-title', 'value', res.entry.title);
 			attr('submitform-entryid', 'value', res.entry.id);
 			show('submitform-existing');
-			find('submitform-cancel').onclick = function() {
-				location.href = '@BLOGURI@?entryid=' + res.entry.id;
-			};
+			if (url.length) {
+				show('submitform-cancel');
+				find('submitform-cancel').onclick = function() {
+					location.href = url;
+				};
+			} else
+				hide('submitform-cancel');
 		} else {
+			url = '@BLOGURI@';
 			attr('submitform-entryid', 'value', '-1');
 			hide('submitform-existing');
-			find('submitform-cancel').onclick = function() {
-				location.href = '@BLOGURI@';
-			};
+			if (url.length) {
+				show('submitform-cancel');
+				find('submitform-cancel').onclick = function() {
+					location.href = url;
+				};
+			} else
+				hide('submitform-cancel');
 		}
 
 		attr('submitform-clipboard', 'disabled', 'disabled');
@@ -408,9 +427,9 @@
 
 	function dblg()
 	{
-		var i, list, env, qs, rep;
+		var i, list, env, qs, url;
 
-		rep = '@REPURI@';
+		url = '@REPURI@';
 		qs = ''
 		if (null !== (env = getQueryVariable('entryid')))
 			qs = '?entryid=' + env;
@@ -428,14 +447,23 @@
 		find('loginform').onsubmit = login;
 		find('submitform').onsubmit = submit;
 		find('logout').onclick = logout;
-		if (rep.length) {
+		if (url.length) {
 			show('server');
 			find('server').onclick = function() {
 				location.href = '@REPURI@';
 			};
 		} else
 			hide('server');
-		find('usersite').onclick = usersite;
+
+		url = '@SITEURI@';
+		if (url.length) {
+			show('usersite');
+			find('usersite').onclick = function() {
+				location.href = url;
+			};
+		} else
+			hide('usersite');
+
 		attr('submitform-media-btn', 'disabled', 'disabled');
 
 		return(sendQuery('@CGIURI@/index.json' + qs, 
@@ -544,6 +572,7 @@
 	function submitSuccess(e, resp)
 	{
 		var res = parser(resp);
+		var url;
 
 		if (null !== mde) {
 			mde.value('');
@@ -555,7 +584,12 @@
 		if (null === res)
 			return;
 
-		location.href = '@BLOGURI@?entryid=' + res.id;
+		url = '@BLOGURI@';
+		if (url.length) {
+			url += '?entryid=' + res.id;
+			location.href = '@BLOGURI@?entryid=' + res.id;
+		} else
+			window.location.reload();
 	}
 
 	function submit()

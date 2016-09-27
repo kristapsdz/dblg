@@ -1,5 +1,7 @@
 body, html						{ height: 100%; }
 body							{ margin: 0; 
+							  font-size: 12pt;
+							  font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
 							  position: relative; }
 .hide							{ display: none; }
 #loading, #loaded					{ height: 100%; 
@@ -7,7 +9,7 @@ body							{ margin: 0;
 							  margin-left: auto;
 							  margin-right: auto;
 							  position: relative; }
-#loggedin						{ max-width: 80em;
+#loggedin						{ max-width: 60em;
 							  width: 100%;
 							  margin-left: auto;
 							  margin-right: auto; }
@@ -17,7 +19,7 @@ body							{ margin: 0;
 							  max-width: 30em;
 							  width: 100%;
 							  transform: translate(-50%, -50%); }
-#loadingmsg						{ max-width: auto;
+#loadingmsg						{ max-width: none;
 							  width: auto; }
 .error							{ color: red; }
 #loggedin > input					{ display: none; }
@@ -96,12 +98,20 @@ button							{ color: rgba(0, 0, 0, 0.8);
 							  cursor: pointer;
 							  -moz-user-select: none; }
 fieldset input[type="checkbox"]				{ width: auto; }
+fieldset input[readonly="readonly"]			{ background-color: #f4f4f4; }
 button:hover						{ background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.1)); }
 button:active						{ box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.15) inset, 0px 0px 6px rgba(0, 0, 0, 0.2) inset; }
 button.primary						{ background-color: #0078E7;
 							  color: #FFF; }
 button[disabled]					{ opacity: 0.4; }
 button[disabled]:hover					{ background-image: none; }
+footer							{ font-size: 10pt; 
+							  color: #888; 
+							  margin-top: 24pt; }
+footer a						{ color: #555; }
+footer a:hover						{ color: #444; }
+#loggedin footer					{ margin-bottom: 12pt; }
+#login label						{ color: #333; }
 
 
 @media only screen and (max-width: 360px), only screen and (max-device-width: 360px) {

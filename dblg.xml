@@ -52,6 +52,9 @@
 						</button>
 					</div>
 				</form>
+				<footer>
+					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
+				</footer>
 			</section>
 			<section id="loggedin" class="hide">
 				<input type="radio" name="shown" value="1" id="show-usermod" />
@@ -101,6 +104,9 @@
 					<ul id="userlist">
 						<li>
 							<a class="userlist-name userlist-email-link"></a>
+							<span class="userlist-admin" title="Administrator">
+								<i class="fa fa-exclamation-circle"></i>
+							</span>
 						</li>
 					</ul>
 					<form id="adduserform" method="post" action="@CGIURI@/adduser.json">
@@ -309,6 +315,9 @@
 						</div>
 					</form>
 				</div>
+				<footer>
+					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
+				</footer>
 			</section>
 		</section>
 	</body>
