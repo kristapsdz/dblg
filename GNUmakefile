@@ -83,21 +83,24 @@ SITEURI	 	 = $(HTURI)/index.html
 endif
 
 OBJS	 = dblg.o
-HTMLS	 = dblg.html
-JSMINS	 = dblg.min.js
-CSSS	 = dblg.css
+HTMLS	 = dblg.html blog.html
+JSMINS	 = dblg.min.js blog.min.js
+CSSS	 = dblg.css blog.css
 AEMAIL	 = $(shell whoami)@$(shell hostname)
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
 CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
+VERSION	 = 0.1.0
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
+installwww: all
+	mkdir -p $(HTDOCS)
+	install -m 0444 $(HTMLS) $(JSMINS) $(CSSS) $(HTDOCS)
+
 updatecgi: all
 	mkdir -p $(CGIBIN)
-	mkdir -p $(HTDOCS)
 	install -m 0555 dblg $(CGIBIN)/$(CGINAME)
-	install -m 0444 $(HTMLS) $(JSMINS) $(CSSS) $(HTDOCS)
 
 # Only allow this on dev.
 ifeq ($(shell uname), Darwin)
@@ -126,12 +129,14 @@ dblg: $(OBJS)
 	sed -e "s!@HTURI@!$(HTURI)!g" \
 	    -e "s!@SITEURI@!$(SITEURI)!g" \
 	    -e "s!@BLOGURI@!$(BLOGURI)!g" \
+	    -e "s!@VERSION@!$(VERSION)!g" \
 	    -e "s!@REPURI@!$(REPURI)!g" \
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@
 
 .xml.html:
 	sed -e "s!@HTURI@!$(HTURI)!g" \
 	    -e "s!@SITEURI@!$(SITEURI)!g" \
+	    -e "s!@VERSION@!$(VERSION)!g" \
 	    -e "s!@BLOGURI@!$(BLOGURI)!g" \
 	    -e "s!@REPURI@!$(REPURI)!g" \
 	    -e "s!@CGIURI@!$(CGIURI)!g" $< >$@

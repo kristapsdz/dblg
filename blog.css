@@ -1,0 +1,58 @@
+body, html				{ margin: 0; }
+body					{ font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif; 
+					  background-color: #cacaca;
+					  font-size: 12pt; }
+body > footer				{ text-align: center;
+					  color: #666;
+					  margin-top: 24pt;
+					  margin-bottom: 12pt;
+					  font-size: 10pt; }
+body > footer a				{ text-decoration: none; }
+
+/* 
+ * These are for the blog itself.
+ * You can copy-and-paste this directly into your stylesheet.
+ */
+
+#blog					{ max-width: 60em;
+					  width: 80%;
+					  margin-top: 12pt;
+					  margin-left: auto;
+					  margin-right: auto; }
+#blog > div + div			{ margin-top: 24pt; }
+#blog .blog-content			{ padding: 12pt;
+					  background-color: #fff;
+					  border-radius: 2pt;
+					  color: #000;
+					  font-size: 14pt;
+					  border: thin solid #fff; }
+#blog img				{ margin-left: auto;
+					  margin-right: auto;
+					  max-width: 100%;
+					  display: block; }
+#blog .blog-control			{ opacity: 0.8; 
+					  font-size: 10pt; }
+#blog .blog-title			{ font-size: 18pt; }
+#blog .blog-datebox			{ font-size: 11pt; 
+					  margin-top: 6pt;
+					  display: flex;
+					  align-items: center;
+					  margin-bottom: 6pt; }
+#blog .blog-datebox > :last-child	{ flex: 1; 
+					  text-align: right; }
+#blog .blog-datebox i			{ font-size: 10pt; }
+#blog .blog-delete-commit		{ background-color: rgba(255, 255, 255, 0.2);
+					  border-radius: 1pt;
+					  padding: 0 4pt; }
+#blog .blog-delete-commit > *		{ padding: 0 1pt; }
+#blog .hide				{ display: none; }
+#blog a					{ text-decoration: none; }
+
+@media only screen and (max-width: 767px), only screen and (max-device-width: 767px) {
+#blog img				{ width: 100%; }
+#blog					{ width: 90%; }
+#blog .blog-content			{ padding: 6pt; 
+					  font-size: 12pt; }
+#blog .blog-title			{ font-size: 14pt; }
+#blog .blog-control			{ font-size: inherit; }
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta charset="utf-8" /> 
+		<title>dblg :: blog viewer</title>
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="@HTURI@/blog.css" />
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.4.3/showdown.min.js"></script>
+		<script src="@HTURI@/blog.min.js"></script>
+	</head>
+	<body>
+		<section id="blog">
+			<article>
+				<div class="blog-control">
+					Owner control:
+					<span class="blog-delete-pending hide">
+						<i class="fa fa-fw fa-pulse fa-spinner"></i>
+					</span>
+					<span class="blog-delete-submit">
+						<a href="#" title="Delete post" class="blog-delete-check"><i class="fa fa-fw fa-ban"></i></a>
+						<span class="blog-delete-commit hide">
+							<strong>Seriously?</strong>
+							<a href="#" title="Delete post" class="blog-delete">Yes.</a>
+							<a href="#" title="Don't delete post" class="blog-nodelete">No.</a>
+						</span>
+					</span>
+					<span>
+						<a title="Edit post" class="blog-edit"><i class="fa fa-fw fa-pencil-square"></i></a>
+					</span>
+				</div>
+				<div class="blog-title"></div>
+				<div class="blog-content"></div>
+				<div class="blog-datebox">
+					<div>
+						<a class="blog-canonlink"><i class="fa fa-fw fa-link"></i></a>
+						<a class="blog-coords"><i class="fa fa-fw fa-globe"></i></a>
+						<i class="fa fa-fw fa-clock-o"></i>
+						<a class="blog-author"></a>,
+						<span class="blog-date"></span>
+					</div>
+				</div>
+			</article>
+		</section>
+		<footer>
+			Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
+			<a href="https://github.com/kristapsdz/dblg"><i class="fa fa-fw fa-github"></i></a>
+		</footer>
+	</body>
+</html>
