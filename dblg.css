@@ -118,4 +118,5 @@ footer a:hover						{ color: #444; }
 #loggedin nav						{ text-align: center; }
 #entry .editor-toolbar a				{ width: 24px; }
 #entry .editor-toolbar i.separator			{ margin: 1pt; }
+button span						{ display: none; }
 }

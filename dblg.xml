@@ -65,7 +65,7 @@
 					<div>
 						<button type="button" disabled="disabled" id="submitform-geolocate">
 							<i class="fa fa-globe"></i>
-							Adjust
+							<span>Adjust</span>
 						</button>
 						<span id="submitform-geolocated" class="hide">
 							<i class="fa fa-fw fa-check-square-o"></i>
@@ -83,7 +83,7 @@
 					<div>
 						<button type="button" id="server">
 							<i class="fa fa-server"></i>
-							Server
+							<span>Server</span>
 						</button>
 						<button type="button" class="primary" id="logout">
 							Logout
