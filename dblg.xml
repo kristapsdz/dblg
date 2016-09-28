@@ -7,6 +7,7 @@
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
 		<link rel="stylesheet" href="@HTURI@/dblg.css" />
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
 		<script src="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 		<script src="//cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/js-sha1/0.3.0/sha1.min.js"></script>
@@ -63,20 +64,20 @@
 				<input type="radio" name="shown" value="3" id="show-admin" />
 				<section id="intro">
 					<div>
-						<button type="button" disabled="disabled" id="submitform-geolocate">
+						<!-- button type="button" disabled="disabled" id="submitform-geolocate">
 							<i class="fa fa-globe"></i>
 							<span>Adjust</span>
-						</button>
+						</button -->
 						<span id="submitform-geolocated" class="hide">
-							<i class="fa fa-fw fa-check-square-o"></i>
+							<i class="fa fa-fw fa-globe"></i>
 							Location
 						</span>
 						<span id="submitform-ungeolocated" class="hide">
-							<i class="fa fa-fw fa-square-o"></i>
+							<i class="fa fa-fw fa-exclamation-circle"></i>
 							No location
 						</span>
 						<span id="submitform-geolocating" class="hide">
-							<i class="fa fa-fw fa-pulse fa-spinner"></i>
+							<i class="fa fa-fw fa-pulse fa-globe"></i>
 							Locating
 						</span>
 					</div>
@@ -248,13 +249,12 @@
 				</div>
 				<div id="entry">
 					<div id="submitform-existing">
-						<p>
-							<strong>
-								<i class="fa fa-exclamation-triangle"></i>
-								You are editing an existing blog entry!
-							</strong>
-							<a href="@HTURI@/dblg.html">Reset</a> and start a new entry.
-						</p>
+						<strong>
+							<i class="fa fa-exclamation-triangle"></i>
+							You are editing an existing blog entry created
+							<span id="submitform-existing-ctime"></span>.
+						</strong>
+						<a href="@HTURI@/dblg.html">Reset</a> to start a new entry.
 					</div>
 					<div id="mediaform">
 						<fieldset>

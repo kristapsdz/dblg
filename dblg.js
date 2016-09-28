@@ -393,6 +393,9 @@
 			attr('submitform-title', 'value', res.entry.title);
 			attr('submitform-entryid', 'value', res.entry.id);
 			show('submitform-existing');
+			repl('submitform-existing-ctime', 
+				moment.unix(res.entry.ctime).fromNow());
+
 			if (url.length) {
 				show('submitform-cancel');
 				find('submitform-cancel').onclick = function() {

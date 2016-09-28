@@ -51,9 +51,10 @@ a							{ text-decoration: none; }
 #intro > div:last-child					{ flex: 1; 
 							  text-align: right; }
 #intro .intro						{ font-size: 14pt; }
-#entry > div						{ padding-bottom: 1em; }
+#entry > div						{ padding-bottom: 0.5em; }
 #contentform						{ padding-bottom: 0; 
 							  margin-bottom: 0; }
+#submitform-existing 					{ padding-top: 0.5em; }
 #submitform-existing a					{ color: blue; }
 
 fieldset						{ border: none;
