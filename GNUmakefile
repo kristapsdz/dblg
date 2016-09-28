@@ -1,98 +1,67 @@
 .SUFFIXES: .html .in.xml .xml .js .min.js
 
+# The default installation is for a default-install OpenBSD box that's
+# running HTTPS (only) for the blogger.
+
 # File-system location (directory) of static media.
-# HTDOCS = $(PREFIX)
+HTDOCS = /var/www/htdocs
 #
 # URL location (path) of static media.
-# HTURI = /~kristaps
+HTURI = 
 #
 # File-system location (directory) of CGI script.
-# CGIBIN = $(PREFIX)
+CGIBIN = /var/www/cgi-bin
 #
 # File-system location of database.
-# DATADIR = $(PREFIX)
+DATADIR = /var/www/data
 #
 # Web-server relative location of system log file.
-# LOGFILE = $(PREFIX)/dblg_log
+LOGFILE = /logs/dblg-system.log
 #
-# If on a static architecture, -static; otherwise empty.
-# STATIC =
-#
-# Extract library -L flags.
-# LDFLAGS =
+# Compilation and link options.
+# If on a static architecture, STATIC is -static; otherwise empty.
+STATIC = -static
+CFLAGS += -I/usr/local/include
+LDFLAGS += -L/usr/local/lib
 #
 # Web-server relative location of DATADIR.
-# RDDIR = $(PREFIX)
+RDDIR = /data
 #
 # Name of installed CGI script.
-# CGINAME = dblg.cgi
+CGINAME = dblg
 #
 # URL location (filename) of CGI script.
-# CGIURI = /~kristaps/$(CGINAME)
+CGIURI = /cgi-bin/$(CGINAME)
 #
-# Default password hash for administrator on installation.
-# AHASH = foobar
+# Default email and password hash for administrator on installation.
+AEMAIL = $(shell whoami)@$(shell hostname)
+AHASH = $$2b$$10$$rQrWpJndeJAcIumy3kxugu5Dwrbtl9OOfVc7gN/ITBwrATYFGsL3y
 #
 # If on an HTTPS-only installation, should be "-DSECURE".
-# SECURE =
+SECURE = -DSECURE
 #
 # URI of server reports.
-# REPURI =
+REPURI =
 #
 # URI of blog display.
-# BLOGURI =
+BLOGURI = /dblg.html
 #
 # Main site that blog is sitting on.
-# SITEURI =
+SITEURI = /index.html
 
-# Here are the examples that I use.
+# Override these with an optional local file.
+sinclude GNUmakefile.local
 
-ifeq ($(shell uname), Darwin)
-PREFIX		?= /Users/kristaps/Sites
-HTDOCS		 = $(PREFIX)
-HTURI		 = /~kristaps
-CGIBIN		 = $(PREFIX)
-DATADIR		 = $(PREFIX)
-LOGFILE		 = $(PREFIX)/dblg_log
-STATIC		 =
-LDFLAGS		 =
-RDDIR		 = $(PREFIX)
-CGINAME		 = dblg.cgi
-CGIURI		 = /~kristaps/$(CGINAME)
-AHASH		 = foobar
-SECURE		 =
-REPURI	 	 =
-BLOGURI	 	 =
-SITEURI	 	 =
-else
-PREFIX	 	 = /var/www/vhosts/divelog.blue
-HTDOCS		 = $(PREFIX)/htdocs
-HTURI		 = 
-CGIBIN		 = $(PREFIX)/cgi-bin
-DATADIR		 = $(PREFIX)/data
-LOGFILE		 = /logs/dblg-system.log
-STATIC		 = -static
-CFLAGS		+= -I/usr/local/include
-LDFLAGS		+= -L/usr/local/lib
-RDDIR		 = /vhosts/divelog.blue/data
-CGINAME		 = dblg
-CGIURI		 = /cgi-bin/$(CGINAME)
-AHASH		 = $$2b$$10$$rQrWpJndeJAcIumy3kxugu5Dwrbtl9OOfVc7gN/ITBwrATYFGsL3y
-SECURE		 = -DSECURE
-REPURI	 	 = $(HTURI)/report/report.html
-BLOGURI	 	 = $(HTURI)/blog.html
-SITEURI	 	 = $(HTURI)/index.html
-endif
+# Don't edit anything below here.
 
 OBJS	 = dblg.o
 HTMLS	 = dblg.html blog.html
 JSMINS	 = dblg.min.js blog.min.js
 CSSS	 = dblg.css blog.css
-AEMAIL	 = $(shell whoami)@$(shell hostname)
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
 CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-VERSION	 = 0.1.0
+VERSION	 = 0.0.1
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
