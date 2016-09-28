@@ -913,14 +913,16 @@ sendindex(struct kreq *r, const struct user *u)
 static void
 sendpublic(struct kreq *r, const struct user *u)
 {
+	struct khead	*kr;
 	struct kpair	*kpi;
 	struct kjsonreq	 req;
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 first, i;
-	struct tm	*tm;
 	char		 buf[64];
+
+	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
 		ksql_stmt_alloc(r->arg, &stmt, 
@@ -938,20 +940,25 @@ sendpublic(struct kreq *r, const struct user *u)
 		db_user_fill(&user, stmt, &i);
 		db_entry_fill(&entry, stmt, &i);
 		if (first) {
-			tm = gmtime(&entry.mtime);
-			strftime(buf, sizeof(buf), 
-				"%a, %d %b %Y %T GMT", tm);
+			first = 0;
+			snprintf(buf, sizeof(buf), 
+				"\"%" PRId64 "-%lld\"", entry.id, 
+				(long long)entry.mtime);
+			if (NULL != kr && 
+			    0 == strcmp(buf, kr->val)) {
+				sendhttp(r, KHTTP_304);
+				ksql_stmt_free(stmt);
+				db_user_unfill(&user);
+				db_entry_unfill(&entry);
+				return;
+			} 
 			sendhttphead(r, KHTTP_200);
-#if 0
-			khttp_head(r, kresps[KRESP_LAST_MODIFIED], 
-				"%s", buf);
-#endif
+			khttp_head(r, kresps[KRESP_ETAG], "%s", buf);
 			khttp_body(r);
 			kjson_open(&req, r);
 			kjson_obj_open(&req);
 			json_putuser(&req, u, 1);
 			kjson_arrayp_open(&req, "entries");
-			first = 0;
 		}
 		json_putentry(&req, &user, &entry, NULL);
 		db_user_unfill(&user);
