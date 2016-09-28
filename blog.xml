@@ -11,7 +11,7 @@
 		<script src="@HTURI@/blog.min.js"></script>
 		<script>
 			window.addEventListener('load', function(){
-				blogclient('@GIURI@', '@HTURI@/dblg.html');
+				blogclient('@CGIURI@', {editor: '@HTURI@/dblg.html'});
 			});
 		</script>
 		<style>
@@ -57,7 +57,13 @@
 					<div>
 						<i class="fa fa-fw fa-clock-o"></i>
 						<a class="blog-author"></a>,
-						<span class="blog-date"></span>
+						<span class="blog-mtime-box">
+							<span class="blog-mtime"></span>
+							(updated)
+						</span>
+						<span class="blog-ctime-box">
+							<span class="blog-ctime"></span>
+						</span>
 					</div>
 				</div>
 			</article>

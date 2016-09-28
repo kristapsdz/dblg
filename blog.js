@@ -17,10 +17,8 @@
 (function(root) {
 	'use strict';
 
-	/* Location of the dblg CGI script. */
-	var CGIURI;
-	/* Location of dblg editor prog. */
-	var EDITOR;
+	var options = null;
+	var cgiuri = null;
 
 	function sendQuery(url, setup, error, success) 
 	{
@@ -198,7 +196,7 @@
 
 	function removebtn(e, entry)
 	{
-		sendQuery(CGIURI + '/remove.json?entryid=' + entry.id, 
+		sendQuery(cgiuri + '/remove.json?entryid=' + entry.id, 
 			function() { removebtnSetup(e); }, 
 			function() { removebtnError(e); },
 			function() { location.href='index.html'; });
@@ -220,16 +218,28 @@
 		sub = e.children[0];
 		e.removeChild(sub);
 
-		if ((sz = res.entries.length) > 2)
-			sz = 2;
+		sz = res.entries.length;
+		if (null !== options.limit && sz > options.limit)
+			sz = options.limit;
+
 		for (i = 0; i < sz; i++) {
 			cln = sub.cloneNode(true);
 			e.appendChild(cln);
-			repl(cln, 'blog-date', moment.unix
+			repl(cln, 'blog-ctime', moment.unix
 				(res.entries[i].ctime).calendar());
+			repl(cln, 'blog-mtime', moment.unix
+				(res.entries[i].mtime).calendar());
+			if (res.entries[i].mtime !== 
+			    res.entries[i].ctime) {
+				hidec(cln, 'blog-ctime-box');
+				showc(cln, 'blog-mtime-box');
+			} else {
+				showc(cln, 'blog-ctime-box');
+				hidec(cln, 'blog-mtime-box');
+			}
+
 			repl(cln, 'blog-author', 
 				res.entries[i].user.name);
-			console.log(res.entries[i].user.link);
 			if (null !== res.entries[i].user.link)
 				attr(cln, 'blog-author', 'href', 
 					res.entries[i].user.link);
@@ -287,18 +297,22 @@
 					}(cln, res.entries[i]);
 				}
 				list = cln.getElementsByClassName('blog-delete');
-				for (j = 0; j < list.length; j++) {
+				for (j = 0; j < list.length; j++)
 					list[j].onclick = function(root, entry) {
 						return function() {
 							removebtn(root, entry);
 						}
 					}(cln, res.entries[i]);
-				}
 
 				list = cln.getElementsByClassName('blog-edit');
 				for (j = 0; j < list.length; j++)
-					list[j].href = EDITOR + 
-						'?entryid=' + res.entries[i].id;
+					if (null != options.editor) {
+						show(list[j]);
+						list[j].href = options.editor + 
+							'?entryid=' + res.entries[i].id;
+					} else
+						hide(list[j]);
+			
 			} else
 				hidec(cln, 'blog-control');
 		}
@@ -311,19 +325,29 @@
 		hide('blog');
 	}
 
-	function blogclient(cgiuri, editor)
+	function blogclient(uri, opts)
 	{
 		var entryid, query;
 
-		CGIURI = cgiuri;
-		EDITOR = editor;
+		options = {};
+		cgiuri = uri;
 
+		if (null !== opts && typeof opts !== 'undefined') {
+			options.editor = 
+				(typeof opts.editor === 'string') ? 
+				opts.editor : null;
+			options.limit = 
+				(typeof opts.limit === 'number') ? 
+				opts.limit : null;
+		} else {
+			options.editor = null;
+			options.limit = null;
+		}
+
+		query = '';
 		if (null !== (entryid = getQueryVariable('entryid')))
 			query = '?entryid=' + entryid;
-		else
-			query = '';
-
-		return(sendQuery(CGIURI + '/public.json' + query,
+		return(sendQuery(cgiuri + '/public.json' + query,
 			loadSetup, null, loadSuccess));
 	}
 
