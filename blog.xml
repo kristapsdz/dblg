@@ -9,6 +9,18 @@
 		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.4.3/showdown.min.js"></script>
 		<script src="@HTURI@/blog.min.js"></script>
+		<script>
+			body, html { margin: 0; }
+			body { font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif; 
+ 				background-color: #cacaca;
+				font-size: 12pt; }
+			body > footer { text-align: center;
+				color: #666;
+				margin-top: 24pt;
+				margin-bottom: 12pt;
+				font-size: 10pt; }
+			body > footer a { text-decoration: none; }
+		</script>
 	</head>
 	<body>
 		<section id="blog">
