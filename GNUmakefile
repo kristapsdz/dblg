@@ -45,6 +45,8 @@
 # Main site that blog is sitting on.
 # SITEURI =
 
+# Here are the examples that I use.
+
 ifeq ($(shell uname), Darwin)
 PREFIX		?= /Users/kristaps/Sites
 HTDOCS		 = $(PREFIX)
