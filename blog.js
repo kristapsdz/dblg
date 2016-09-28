@@ -17,6 +17,11 @@
 (function(root) {
 	'use strict';
 
+	/* Location of the dblg CGI script. */
+	var CGIURI;
+	/* Location of dblg editor prog. */
+	var EDITOR;
+
 	function sendQuery(url, setup, error, success) 
 	{
 		var xmh = new XMLHttpRequest();
@@ -193,7 +198,7 @@
 
 	function removebtn(e, entry)
 	{
-		sendQuery('@CGIURI@/remove.json?entryid=' + entry.id, 
+		sendQuery(CGIURI + '/remove.json?entryid=' + entry.id, 
 			function() { removebtnSetup(e); }, 
 			function() { removebtnError(e); },
 			function() { location.href='index.html'; });
@@ -289,10 +294,11 @@
 						}
 					}(cln, res.entries[i]);
 				}
+
 				list = cln.getElementsByClassName('blog-edit');
 				for (j = 0; j < list.length; j++)
-					list[j].href = '@HTURI@/dblg.html?' +
-						'entryid=' + res.entries[i].id;
+					list[j].href = EDITOR + 
+						'?entryid=' + res.entries[i].id;
 			} else
 				hidec(cln, 'blog-control');
 		}
@@ -305,22 +311,21 @@
 		hide('blog');
 	}
 
-	function blogclient()
+	function blogclient(cgiuri, editor)
 	{
 		var entryid, query;
+
+		CGIURI = cgiuri;
+		EDITOR = editor;
 
 		if (null !== (entryid = getQueryVariable('entryid')))
 			query = '?entryid=' + entryid;
 		else
 			query = '';
 
-		return(sendQuery('@CGIURI@/public.json' + query,
+		return(sendQuery(CGIURI + '/public.json' + query,
 			loadSetup, null, loadSuccess));
 	}
 
 	root.blogclient = blogclient;
 })(this);
-
-window.addEventListener('load', function(){
-	blogclient();
-});
