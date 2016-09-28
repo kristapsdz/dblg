@@ -135,7 +135,7 @@ static	const char *const stmts[STMT__MAX] = {
 		"ORDER BY entry.mtime DESC",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
-		"longitude=? WHERE userid=? AND id=?",
+		"longitude=?,mtime=? WHERE userid=? AND id=?",
 	/* STMT_ENTRY_NEW */
 	"INSERT INTO entry (contents,title,userid,latitude,"
 		"longitude) VALUES (?,?,?,?,?)",
@@ -379,8 +379,9 @@ db_entry_modify(struct ksql *sql, const struct user *user,
 		ksql_bind_null(stmt, 2);
 		ksql_bind_null(stmt, 3);
 	}
-	ksql_bind_int(stmt, 4, user->id);
-	ksql_bind_int(stmt, 5, id);
+	ksql_bind_int(stmt, 4, time(NULL));
+	ksql_bind_int(stmt, 5, user->id);
+	ksql_bind_int(stmt, 6, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	return(id);
@@ -941,8 +942,10 @@ sendpublic(struct kreq *r, const struct user *u)
 			strftime(buf, sizeof(buf), 
 				"%a, %d %b %Y %T GMT", tm);
 			sendhttphead(r, KHTTP_200);
+#if 0
 			khttp_head(r, kresps[KRESP_LAST_MODIFIED], 
 				"%s", buf);
+#endif
 			khttp_body(r);
 			kjson_open(&req, r);
 			kjson_obj_open(&req);
