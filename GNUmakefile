@@ -94,6 +94,14 @@ VERSION	 = 0.1.0
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
+installserver: all
+	mkdir -p $(HTDOCS)
+	install -m 0444 dblg.html dblg.min.js dblg.css $(HTDOCS)
+
+installclient: all
+	mkdir -p $(HTDOCS)
+	install -m 0444 blog.html blog.min.js blog.css $(HTDOCS)
+
 installwww: all
 	mkdir -p $(HTDOCS)
 	install -m 0444 $(HTMLS) $(JSMINS) $(CSSS) $(HTDOCS)
@@ -102,8 +110,6 @@ updatecgi: all
 	mkdir -p $(CGIBIN)
 	install -m 0555 dblg $(CGIBIN)/$(CGINAME)
 
-# Only allow this on dev.
-ifeq ($(shell uname), Darwin)
 installcgi: updatecgi
 	mkdir -p $(DATADIR)
 	rm -f $(DATADIR)/dblg.db
@@ -111,7 +117,6 @@ installcgi: updatecgi
 	rm -f $(DATADIR)/dblg.db-shm
 	install -m 0666 dblg.db $(DATADIR)
 	chmod 0777 $(DATADIR)
-endif
 
 clean:
 	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db
@@ -120,7 +125,7 @@ clean:
 dblg.db: dblg.sql
 	rm -f $@
 	sed -e "s!@AEMAIL@!$(AEMAIL)!" \
-	    -e "s!@AHASH@!$(AHASH)!" dblg.sql | sqlite3 $@
+	    -e 's!@AHASH@!$(AHASH)!' dblg.sql | sqlite3 $@
 
 dblg: $(OBJS)
 	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
