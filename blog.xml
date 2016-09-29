@@ -11,7 +11,11 @@
 		<script src="@HTURI@/blog.min.js"></script>
 		<script>
 			window.addEventListener('load', function(){
-				blogclient('@CGIURI@', {editor: '@HTURI@/dblg.html'});
+				blogclient('@CGIURI@', {
+					blog: '@HTURI@/blog.html',
+					editor: '@HTURI@/dblg.html',
+					limit: 2
+				});
 			});
 		</script>
 		<style>

@@ -250,10 +250,14 @@
 			attr(cln, 'blog-title', 'href', 
 				'blog.html?entryid=' + 
 				res.entries[i].id);
-			attr(cln, 'blog-canonlink', 'href',
-				window.location.origin + 
-				window.location.pathname + 
-				'?entryid=' + res.entries[i].id);
+
+			if (null !== options.blog) {
+				showc(cln, 'blog-canonlink');
+				attr(cln, 'blog-canonlink', 'href',
+					options.blog + '?entryid=' + 
+					res.entries[i].id);
+			} else
+				hidec(cln, 'blog-canonlink');
 
 			res.entries[i].html = null !== conv ?
 				conv.makeHtml(res.entries[i].content) :
@@ -339,9 +343,13 @@
 			options.limit = 
 				(typeof opts.limit === 'number') ? 
 				opts.limit : null;
+			options.blog = 
+				(typeof opts.blog === 'string') ? 
+				opts.blog : null;
 		} else {
 			options.editor = null;
 			options.limit = null;
+			options.blog = null;
 		}
 
 		query = '';
