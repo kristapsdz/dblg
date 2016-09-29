@@ -62,15 +62,12 @@
 				<input type="radio" name="shown" value="1" id="show-usermod" />
 				<input type="radio" name="shown" value="2" id="show-entry" checked="checked" />
 				<input type="radio" name="shown" value="3" id="show-admin" />
+				<input type="radio" name="shown" value="3" id="show-edits" />
 				<section id="intro">
 					<div>
-						<!-- button type="button" disabled="disabled" id="submitform-geolocate">
-							<i class="fa fa-globe"></i>
-							<span>Adjust</span>
-						</button -->
 						<span id="submitform-geolocated" class="hide">
 							<i class="fa fa-fw fa-globe"></i>
-							Location
+							Location ok
 						</span>
 						<span id="submitform-ungeolocated" class="hide">
 							<i class="fa fa-fw fa-exclamation-circle"></i>
@@ -78,7 +75,7 @@
 						</span>
 						<span id="submitform-geolocating" class="hide">
 							<i class="fa fa-fw fa-pulse fa-globe"></i>
-							Locating
+							Locating...
 						</span>
 					</div>
 					<div>
@@ -93,7 +90,7 @@
 				</section>
 				<nav>
 					<label id="label-entry" for="show-entry">
-						Publish entry
+						Publish <span>entry</span>
 					</label>
 					<label id="label-usermod" for="show-usermod">
 						User data
@@ -101,7 +98,38 @@
 					<label id="label-admin" for="show-admin">
 						User admin
 					</label>
+					<label id="label-edits" for="show-edits">
+						Pending <span>entries</span>
+					</label>
 				</nav>
+				<div id="edits">
+					<div id="editlist">
+						<div>
+							<div>
+								<a class="editlist-link">
+									<span class="editlist-titlebox">
+										<span class="editlist-title"></span>
+									</span>
+									<span class="editlist-notitlebox">
+										<i>No title.</i>
+									</span>
+								</a>
+							</div>
+							<div class="editlist-dates">
+								<i class="fa fa-clock-o"></i>
+								<span class="editlist-ctime"></span>
+								<span class="editlist-mtimebox">
+									(edited <span class="editlist-mtime"></span>)
+								</span>
+							</div>
+						</div>
+					</div>
+					<div id="noeditlist">
+						<p>
+							<i>No pending entries.</i>
+						</p>
+					</div>
+				</div>
 				<div id="admin">
 					<ul id="userlist">
 						<li>
@@ -249,12 +277,19 @@
 				</div>
 				<div id="entry">
 					<div id="submitform-existing">
-						<strong>
-							<i class="fa fa-exclamation-triangle"></i>
-							You are editing an existing blog entry created
-							<span id="submitform-existing-ctime"></span>.
-						</strong>
-						<a href="@HTURI@/dblg.html">Reset</a> to start a new entry.
+						<p>
+							<strong>
+								<i class="fa fa-exclamation-triangle"></i>
+								You are editing an existing 
+								(<span
+									id="submitform-existing-published">published</span><span
+									id="submitform-existing-unpublished">unpublished</span>)
+								blog entry created
+								<span id="submitform-existing-ctime"></span>.
+							</strong>
+							<a href="@HTURI@/dblg.html">Reset</a> to start a new entry or
+							<a id="submitform-remove" href="#">delete</a> the current entry.
+						</p>
 					</div>
 					<div id="mediaform">
 						<fieldset>
@@ -309,6 +344,14 @@
 							<button type="button" disabled="disabled" class="primary hide pending">
 								<i class="fa fa-pulse fa-spinner"></i>
 								Publishing...
+							</button>
+							<button type="button" class="save" id="submitform-save">
+								<i class="fa fa-save"></i>
+								<span>Publish later</span>
+							</button>
+							<button type="button" disabled="disabled" class="hide saving">
+								<i class="fa fa-pulse fa-spinner"></i>
+								<span>Publishing...</span>
 							</button>
 							<button type="button" id="submitform-cancel">
 								Cancel

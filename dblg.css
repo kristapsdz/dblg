@@ -30,6 +30,7 @@ a							{ text-decoration: none; }
 				  			  overflow: hidden; }
 #show-admin:checked ~ #admin,
 #show-usermod:checked ~ #usermod,
+#show-edits:checked ~ #edits,
 #show-entry:checked ~ #entry				{ opacity: 1; 
 							  max-height: 100em; }
 #loggedin > input ~ nav label				{ border-bottom: 2px solid transparent; 
@@ -43,6 +44,7 @@ a							{ text-decoration: none; }
 #loggedin nav label:hover				{ border-bottom: 2px solid rgba(255, 153, 0, 0.4); }
 #show-admin:checked ~ nav #label-admin,
 #show-usermod:checked ~ nav #label-usermod,
+#show-edits:checked ~ nav #label-edits,
 #show-entry:checked ~ nav #label-entry			{ border-bottom: 2px solid orange; }
 #usermod form + form					{ margin-top: 4pt; }
 #intro							{ display: flex; 
@@ -113,11 +115,16 @@ footer a						{ color: #555; }
 footer a:hover						{ color: #444; }
 #loggedin footer					{ margin-bottom: 12pt; }
 #login label						{ color: #333; }
-
+#editlist						{ margin-top: 1em; }
+#editlist a						{ color: blue; }
+#editlist .editlist-dates				{ font-size: 11pt; }
+#editlist > div + div					{ margin-top: 6pt; }
+#editlist .editlist-mtimebox				{ color: #666; }
 
 @media only screen and (max-width: 360px), only screen and (max-device-width: 360px) {
 #loggedin nav						{ text-align: center; }
 #entry .editor-toolbar a				{ width: 24px; }
 #entry .editor-toolbar i.separator			{ margin: 1pt; }
 button span						{ display: none; }
+label span						{ display: none; }
 }

@@ -89,6 +89,7 @@ enum	key {
 	KEY_MARKDOWN,
 	KEY_NAME,
 	KEY_PASS,
+	KEY_SAVE,
 	KEY_SESSCOOKIE,
 	KEY_SESSID,
 	KEY_TITLE,
@@ -99,6 +100,7 @@ enum	stmt {
 	STMT_ENTRY_DELETE,
 	STMT_ENTRY_GET,
 	STMT_ENTRY_GET_PUBLIC,
+	STMT_ENTRY_LIST_PENDING,
 	STMT_ENTRY_LIST_PUBLIC,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
@@ -134,18 +136,23 @@ static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_GET_PUBLIC */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE entry.id=? AND flags=0",
+		"WHERE entry.id=? AND entry.flags=0",
+	/* STMT_ENTRY_LIST_PENDING */
+	"SELECT " ENTRY " FROM entry "
+		"WHERE entry.flags=1 AND entry.userid=? "
+		"ORDER BY entry.mtime DESC",
 	/* STMT_ENTRY_LIST_PUBLIC */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE flags=0 "
+		"WHERE entry.flags=0 "
 		"ORDER BY entry.mtime DESC",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
-		"longitude=?,mtime=? WHERE userid=? AND id=?",
+		"longitude=?,mtime=?,flags=? "
+		"WHERE userid=? AND id=?",
 	/* STMT_ENTRY_NEW */
 	"INSERT INTO entry (contents,title,userid,latitude,"
-		"longitude) VALUES (?,?,?,?,?)",
+		"longitude,flags) VALUES (?,?,?,?,?,?)",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -188,6 +195,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_stringne, "markdown" }, /* KEY_MARKDOWN */
 	{ kvalid_stringne, "name" }, /* KEY_NAME */
 	{ kvalid_stringne, "pass" }, /* KEY_PASS */
+	{ NULL, "save" }, /* KEY_SAVE */
 	{ kvalid_uint, "sesscookie" }, /* KEY_SESSCOOKIE */
 	{ kvalid_int, "sessid" }, /* KEY_SESSID */
 	{ kvalid_stringne, "title" }, /* KEY_TITLE */
@@ -369,7 +377,7 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 static int64_t
 db_entry_modify(struct ksql *sql, const struct user *user, 
 	const char *title, const char *text, 
-	int64_t id, double lat, double lng)
+	int64_t id, double lat, double lng, int save)
 {
 	struct ksqlstmt	*stmt;
 
@@ -387,8 +395,9 @@ db_entry_modify(struct ksql *sql, const struct user *user,
 		ksql_bind_null(stmt, 3);
 	}
 	ksql_bind_int(stmt, 4, time(NULL));
-	ksql_bind_int(stmt, 5, user->id);
-	ksql_bind_int(stmt, 6, id);
+	ksql_bind_int(stmt, 5, save ? 1 : 0);
+	ksql_bind_int(stmt, 6, user->id);
+	ksql_bind_int(stmt, 7, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	return(id);
@@ -396,7 +405,8 @@ db_entry_modify(struct ksql *sql, const struct user *user,
 
 static int64_t
 db_entry_new(struct ksql *sql, const struct user *user, 
-	const char *title, const char *text, double lat, double lng)
+	const char *title, const char *text, 
+	double lat, double lng, int save)
 {
 	struct ksqlstmt	*stmt;
 	int64_t		 id;
@@ -415,6 +425,7 @@ db_entry_new(struct ksql *sql, const struct user *user,
 		ksql_bind_null(stmt, 3);
 		ksql_bind_null(stmt, 4);
 	}
+	ksql_bind_int(stmt, 5, save ? 1 : 0);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	ksql_lastid(sql, &id);
@@ -749,17 +760,26 @@ sendsubmit(struct kreq *r, const struct user *u)
 	int64_t		 id;
 	struct kjsonreq	 req;
 	double		 lat, lng;
+	int		 save;
 
-	if (NULL == (kpt = r->fieldmap[KEY_TITLE]) ||
-	    NULL == (kpm = r->fieldmap[KEY_MARKDOWN])) {
+	/* Are we here to save or to publish? */
+
+	save = NULL != r->fieldmap[KEY_SAVE];
+	assert(NULL != u);
+
+	kpm = r->fieldmap[KEY_MARKDOWN];
+	kpt = r->fieldmap[KEY_TITLE];
+    	kplat = r->fieldmap[KEY_LATITUDE];
+    	kplng = r->fieldmap[KEY_LONGITUDE];
+
+	/* Require fields only if we're publishing. */
+
+	if ( ! save && (NULL == kpt || NULL == kpm)) {
 		sendhttp(r, KHTTP_400);
 		return;
 	}
 
-	assert(NULL != u);
-
-    	kplat = r->fieldmap[KEY_LATITUDE];
-    	kplng = r->fieldmap[KEY_LONGITUDE];
+	/* We need both coordinates for orientation. */
 
 	if (NULL != kplat && NULL != kplng) {
 		lat = r->fieldmap[KEY_LATITUDE]->parsed.d;
@@ -770,12 +790,14 @@ sendsubmit(struct kreq *r, const struct user *u)
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID]) &&
 	    kpi->parsed.i > 0)  
 		id = db_entry_modify(r->arg, u, 
-			kpt->parsed.s, kpm->parsed.s, 
-			kpi->parsed.i, lat, lng);
+			NULL == kpt ? "" : kpt->parsed.s, 
+			NULL == kpm ? "" : kpm->parsed.s, 
+			kpi->parsed.i, lat, lng, save);
 	else
 		id = db_entry_new(r->arg, u, 
-			kpt->parsed.s, kpm->parsed.s, 
-			lat, lng);
+			NULL == kpt ? "" : kpt->parsed.s, 
+			NULL == kpm ? "" : kpm->parsed.s, 
+			lat, lng, save);
 
 	sendhttp(r, KHTTP_200);
 	kjson_open(&req, r);
@@ -897,6 +919,19 @@ sendindex(struct kreq *r, const struct user *u)
 		}
 		ksql_stmt_free(stmt);
 	}
+	kjson_array_close(&req);
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_ENTRY_LIST_PENDING], 
+		STMT_ENTRY_LIST_PENDING);
+	ksql_bind_int(stmt, 0, u->id);
+	kjson_arrayp_open(&req, "pending");
+	while (KSQL_ROW == ksql_stmt_step(stmt)) {
+		db_entry_fill(&entry, stmt, NULL);
+		json_putentry(&req, NULL, &entry, NULL);
+		db_entry_unfill(&entry);
+	} 
+	ksql_stmt_free(stmt);
 	kjson_array_close(&req);
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
