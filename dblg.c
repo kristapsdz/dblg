@@ -942,8 +942,9 @@ sendpublic(struct kreq *r, const struct user *u)
 		if (first) {
 			first = 0;
 			snprintf(buf, sizeof(buf), 
-				"\"%" PRId64 "-%lld\"", entry.id, 
-				(long long)entry.mtime);
+				"\"%" PRId64 "-%" PRId64 "-%lld\"", 
+				NULL != u ? u->id : 0,
+				entry.id, (long long)entry.mtime);
 			if (NULL != kr && 
 			    0 == strcmp(buf, kr->val)) {
 				sendhttp(r, KHTTP_304);
