@@ -4,15 +4,19 @@
 # running HTTPS (only) for the blogger.
 
 # File-system location (directory) of static media.
+# See HTURI for the web-visible component.
 HTDOCS = /var/www/htdocs
 #
 # URL location (path) of static media.
+# See HTDOCS.
 HTURI = 
 #
 # File-system location (directory) of CGI script.
+# See CGIURI.
 CGIBIN = /var/www/cgi-bin
 #
 # File-system location of database.
+# See RDDIR.
 DATADIR = /var/www/data
 #
 # Web-server relative location of system log file.
@@ -20,33 +24,48 @@ LOGFILE = /logs/dblg-system.log
 #
 # Compilation and link options.
 # If on a static architecture, STATIC is -static; otherwise empty.
+# I use /usr/local for kcgi and ksql, hence using them here.
 STATIC = -static
 CFLAGS += -I/usr/local/include
 LDFLAGS += -L/usr/local/lib
 #
 # Web-server relative location of DATADIR.
+# See DATADIR.
 RDDIR = /data
 #
-# Name of installed CGI script.
+# Name of installed CGI script, since some servers like to have ".cgi"
+# appended to everything.
 CGINAME = dblg
 #
 # URL location (filename) of CGI script.
+# See CGIBIN and CGINAME.
 CGIURI = /cgi-bin/$(CGINAME)
 #
 # Default email and password hash for administrator on installation.
+# The password is the password hash, which will depend upon the
+# operating system where you actually run the system.
+# In this case, it's for OpenBSD using "blowfish,a" hashing.
 AEMAIL = $(shell whoami)@$(shell hostname)
 AHASH = $$2b$$10$$rQrWpJndeJAcIumy3kxugu5Dwrbtl9OOfVc7gN/ITBwrATYFGsL3y
 #
 # If on an HTTPS-only installation, should be "-DSECURE".
 SECURE = -DSECURE
 #
-# URI of server reports.
+# URI (relative, if desired to your web server) of server reports.
+# I use GoAccess, https://goaccess.io, for mine.
+# This is used for a "server" button in the blog editor.
+# If empty, the button is removed.
 REPURI =
 #
-# URI of blog display.
-BLOGURI = /dblg.html
+# URI of blog viewer (installed by "installclient").
+# This is used by some "cancel" buttons that redirect back to viewing
+# the blog entry.
+# If empty, those buttons are removed.
+BLOGURI = /blog.html
 #
 # Main site that blog is sitting on.
+# This is by the login page's "cancel" button.
+# If empty, the button is removed.
 SITEURI = /index.html
 
 # Override these with an optional local file.
