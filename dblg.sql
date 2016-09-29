@@ -19,7 +19,7 @@ CREATE TABLE entry (
 	ctime INTEGER NOT NULL DEFAULT(strftime('%s', 'now')),
 	-- Last updated.
 	mtime INTEGER NOT NULL DEFAULT(strftime('%s', 'now')),
-	-- Not currently used.
+	-- 1 if currently being edited (and thus not to be shown).
 	flags INTEGER NOT NULL DEFAULT(0),
 	-- Unique identifier.
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

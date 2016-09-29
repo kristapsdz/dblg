@@ -56,6 +56,7 @@ struct	entry {
 	double		 lat;
 	double		 lng;
 	int64_t		 flags;
+#define	ENTRY_PENDING	 0x01
 	int64_t		 id;
 };
 
@@ -97,7 +98,8 @@ enum	key {
 enum	stmt {
 	STMT_ENTRY_DELETE,
 	STMT_ENTRY_GET,
-	STMT_ENTRY_LIST,
+	STMT_ENTRY_GET_PUBLIC,
+	STMT_ENTRY_LIST_PUBLIC,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
 	STMT_SESS_DEL,
@@ -129,9 +131,14 @@ static	const char *const stmts[STMT__MAX] = {
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.id=?",
-	/* STMT_ENTRY_LIST */
+	/* STMT_ENTRY_GET_PUBLIC */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
+		"WHERE entry.id=? AND flags=0",
+	/* STMT_ENTRY_LIST_PUBLIC */
+	"SELECT " USER "," ENTRY " FROM entry "
+		"INNER JOIN user ON user.id=entry.userid "
+		"WHERE flags=0 "
 		"ORDER BY entry.mtime DESC",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
@@ -712,6 +719,10 @@ json_putentry(struct kjsonreq *req, const struct user *u,
 		kjson_obj_close(req);
 	} else
 		kjson_putnullp(req, "coords");
+	kjson_objp_open(req, "attrs");
+	kjson_putboolp(req, "pending", 
+		ENTRY_PENDING & entry->flags);
+	kjson_obj_close(req);
 	kjson_obj_close(req);
 }
 
@@ -926,13 +937,13 @@ sendpublic(struct kreq *r, const struct user *u)
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_GET], 
-			STMT_ENTRY_GET);
+			stmts[STMT_ENTRY_GET_PUBLIC], 
+			STMT_ENTRY_GET_PUBLIC);
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
 	} else
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_LIST], 
-			STMT_ENTRY_LIST);
+			stmts[STMT_ENTRY_LIST_PUBLIC], 
+			STMT_ENTRY_LIST_PUBLIC);
 
 	first = 1;
 	while (KSQL_ROW == ksql_stmt_step(stmt)) {
