@@ -1,55 +1,85 @@
 ## Synopsis
 
-This is a read-only repository mirror for dblg.
-There's nothing to say here yet---stay tuned!
-But in short, the project consists of a backend server that serves JSON
-to two front-ends.
-The first is for writing blogs.
-The second is for viewing them.
-The writing tool would probably be installed as-is, but I'd expect the
-latter to be integrated into one or more other pages.
+This is a read-only repository mirror for dblg, a [simple] dynamic
+blogging utility.
+dblg is a small, no-nonsense web application supporting the bare minimum
+required for publishing blog (or "micro-blog") content.
+
+It has three components:
+
+1. A back-end server.  This is a tiny CGI script written in C,
+[dblg.c](dblg.c).  It links to [kcgi](https://kristaps.bsd.lv/kcgi) and
+[ksql](https://kristaps.bsd.lv/ksql), and uses
+[SQLite](https://sqlite.org) for its backing store.  It produces JSON
+objects, so it can be driven by any front-end conforming to its
+expectations.
+
+2. An editing front-end, [dblg.xml](dblg.xml), [dblg.css](dblg.css), and
+[dblg.js](dblg.js).  This part drives the back-end by providing an
+interface for saving entries, publishing them, and doing user
+management.  The editor front-end is usually installed on the same
+machine as the back-end, but that's really just a matter of convenience
+of keeping both in sync.  You can build your own editor front-end that
+drives the back-end server---it's just JSON and HTML forms---but that's
+kind of a PITA.
+
+3. A blog viewer front-end, [blog.js](blog.js) and, for reference,
+[blog.xml](blog.xml), [blog.css](blog.css).  Your public-facing pages
+will want to be filled in with blog content, which they can do by
+including the JavaScript file [blog.js](blog.js) and having an HTML
+element with identifier `blog` filled-in as in the reference.  Your page
+will then invoke the script when desired.
+
+This tool is still under development, as is its documentation.  For a
+view of it working, see my [diving blog](https://divelog.blue).
 
 ## Installation
 
-There are three components to this blogger: the back-end, the editor,
-and the viewer.
+As mentioned, there are three components to this blogger: the back-end,
+the editor, and the viewer.  The back-end and editor usually go in the
+same place, so I'll start with them.
 
-For the former two, you'll need to download and configure the software.
-This is fairly straightforward.  First, download.  Then, open the
+### Editor front-end and server back-end
+
+You'll first need to download and configure the software.  This is
+fairly straightforward.  First, download.  Then, open the
 [GNUmakefile](GNUmakefile).  Override the variables you'd like in a
-GNUmakefile.local file, which won't be touched.  The
-[GNUmakefile](GNUmakefile) documents each variable.
+GNUmakefile.local file (which won't be touched).  The
+[GNUmakefile](GNUmakefile) documents each variable and has an example
+deployment on a default OpenBSD machine.
 
 You'll need [kcgi](https://kristaps.bsd.lv/kcgi) and
 [ksql](https://kristaps.bsd.lv/ksql) for the back-end server.
 
-### Viewer
+Once configured, run `make installcgi` for first-time to install the
+database and the CGI script; else, `make updatecgi` only to freshen the
+CGI script and not touch the database.
+
+To install the editor tools, use `make installserver`.  This will only
+install the HTML, JavaScript, and CSS for the editor.
+
+### Viewer front-end
 
 To install the viewer, you don't need to download this software.  Simply
-use the existing [blog.xml](blog.xml), [blog.css](blog.css), and
-[blog.js](blog.js) files in your application.  You can edit these as you
-wish, or just use the [blog.xml](blog.xml) file and link to the CSS and
-JavaScript through the GitHub CDN.
+reference the existing [blog.xml](blog.xml) and [blog.css](blog.css),
+then include [blog.js](blog.js) files in your application. 
 
-You'll need to invoke the viewer JavaScript after loading all media.
-See the `script` bits of [blog.xml](blog.xml) for an example.
+`
+<script src="//cdn.rawgit.com/kristapsdz/dblg/master/blog.js"></script>
+<script>
+  window.addEventListener('load', function(){
+    blogclient('/cgi-bin/dblg', {
+      blog: '/blog.html',
+      editor: '/dblg.html',
+      limit: 5
+    });
+  });
+</script>
+`
 
-### Editor
-
-To use the editor, you'll need to download and configure the dblg
-software package first.  Once you've customised the
-[GNUmakefile](GNUmakefile) with your parameters, simply run `make
-installserver`.
-
-### Back-end
-
-To use the backend, you'll need to download and configure the dblg
-software package first.  Once you've customised the
-[GNUmakefile](GNUmakefile) with your parameters, simply run `make
-installcgi` (or `make updatecgi` for existing installations).
-
-Then, log in to the editor with your default username and password (as
-configured) and add the users you need.
+In this invocation, the script is pulled from GitHub's CDN and invoked
+in an embedded HTML script.  The embedded script calls the `blogclient`
+function, passing it some example values.
 
 ## License
 
