@@ -428,7 +428,7 @@
 			admin(res);
 	}
 
-	function dblg()
+	function blogeditor()
 	{
 		var i, list, env, qs, url;
 
@@ -511,7 +511,7 @@
 			mde = null;
 		}
 		genericSuccess(e, resp);
-		dblg();
+		blogeditor();
 	}
 
 	function genericSuccess(e, resp)
@@ -627,9 +627,9 @@
 			null, logoutSuccess, logoutSuccess);
 	}
 
-	root.dblg = dblg;
+	root.blogeditor = blogeditor;
 })(this);
 
 window.addEventListener('load', function(){
-	dblg();
+	blogeditor();
 });
