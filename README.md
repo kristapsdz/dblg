@@ -64,7 +64,7 @@ To install the viewer, you don't need to download this software.  Simply
 reference the existing [blog.xml](blog.xml) and [blog.css](blog.css),
 then include [blog.js](blog.js) files in your application. 
 
-`
+```html
 <script src="//cdn.rawgit.com/kristapsdz/dblg/master/blog.js"></script>
 <script>
   window.addEventListener('load', function(){
@@ -75,7 +75,7 @@ then include [blog.js](blog.js) files in your application.
     });
   });
 </script>
-`
+```
 
 In this invocation, the script is pulled from GitHub's CDN and invoked
 in an embedded HTML script.  The embedded script calls the `blogclient`
