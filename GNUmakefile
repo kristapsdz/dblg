@@ -90,8 +90,8 @@ installcgi: updatecgi
 	chmod 0777 $(DATADIR)
 
 clean:
-	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db
-	rm -rf dblg.dSYM
+	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db myproject.tgz
+	rm -rf dblg.dSYM cov-int
 
 dblg.db: dblg.sql
 	rm -f $@
