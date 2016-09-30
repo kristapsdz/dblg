@@ -33,6 +33,20 @@ will then invoke the script when desired.
 This tool is still under development, as is its documentation.  For a
 view of it working, see my [diving blog](https://divelog.blue).
 
+The project is being tracked by
+[Coverity](https://scan.coverity.com/projects/dblg) for static analysis
+of the C source code.
+
+Some features:
+
+- Simple, easy-to-audit code.
+- Straightforward user administration (admins, regular users).
+- Publish directly or delay publication and edit privately.
+- Support for cloud-based images, for now limited to
+[Cloudinary](http://cloudinary.com/) (which I use for the
+[divelog](https://divelog.blue)).
+- Geolocation and coordinates attached to each entry (or suppressed).
+
 ## Installation
 
 As mentioned, there are three components to this blogger: the back-end,
