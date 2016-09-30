@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdarg.h>
@@ -234,6 +235,8 @@ static const char *const pages[PAGE__MAX] = {
 
 /* Forward declaration for attributes. */
 
+static void lwarn(const char *, ...) 
+	__attribute__((format(printf, 1, 2)));
 static void lwarnx(const char *, ...) 
 	__attribute__((format(printf, 1, 2)));
 static void linfo(const char *, ...) 
@@ -256,6 +259,26 @@ linfo(const char *fmt, ...)
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fputc('\n', stderr);
+}
+
+static void
+lwarn(const char *fmt, ...)
+{
+	va_list	 ap;
+	time_t	 t;
+	char	 buf[32];
+	size_t	 sz;
+	int	 er = errno;
+
+	t = time(NULL);
+	ctime_r(&t, buf);
+	sz = strlen(buf);
+	buf[sz - 1] = '\0';
+	fprintf(stderr, "[%s] WARNING: ", buf);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(er));
 }
 
 static void
@@ -1207,6 +1230,14 @@ main(void)
 		khttp_free(&r);
 		return(EXIT_FAILURE);
 	}
+
+#ifdef	__OpenBSD__
+	if (-1 == pledge("stdio rpath cpath wpath flock", NULL)) {
+		lwarn("pledge");
+		khttp_free(&r);
+		return(EXIT_FAILURE);
+	}
+#endif
 
 	/*
 	 * Front line of defence: make sure we're a proper method, make
