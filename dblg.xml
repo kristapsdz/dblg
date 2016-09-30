@@ -131,30 +131,45 @@
 					</div>
 				</div>
 				<div id="admin">
-					<ul id="userlist">
-						<li>
+					<div id="userlist">
+						<div>
+							<span>
+								<a href="#" class="userlist-toggling">
+									<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								</a>
+								<a href="#" class="userlist-enabled">
+									<i class="fa fa-fw fa-toggle-on"></i>
+								</a>
+								<a href="#" class="userlist-disabled">
+									<i class="fa fa-fw fa-toggle-off"></i>
+								</a>
+							</span>
 							<a class="userlist-name userlist-email-link"></a>
 							<span class="userlist-admin" title="Administrator">
 								<i class="fa fa-exclamation-circle"></i>
 							</span>
-						</li>
-					</ul>
+						</div>
+					</div>
 					<form id="adduserform" method="post" action="@CGIURI@/adduser.json">
 						<p class="error error400 hide">
 							E-mail already exists.
 						</p>
 						<fieldset>
 							<div>
-								<label>E-mail</label>
-								<div><input type="email" placeholder="Login e-mail" name="email" required="required" /></div>
+								<label for="adduserform-mail">E-mail</label>
+								<div>
+									<input id="adduserform-mail" type="email" placeholder="Login e-mail" name="email" required="required" />
+								</div>
 							</div>
 							<div>
-								<label>Password</label>
-								<div><input type="password" placeholder="Login password" name="pass" required="required" /></div>
+								<label for="adduserform-pass">Password</label>
+								<div>
+									<input id="adduserform-pass" type="password" placeholder="Login password" name="pass" required="required" />
+								</div>
 							</div>
 							<div>
-								<label>
-									<input type="checkbox" name="admin" />
+								<label for="adduserform-admin">
+									<input type="checkbox" name="admin" id="adduserform-admin" />
 									Administrator
 								</label>
 							</div>

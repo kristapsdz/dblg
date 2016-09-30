@@ -120,6 +120,11 @@ footer a:hover						{ color: #444; }
 #editlist .editlist-dates				{ font-size: 11pt; }
 #editlist > div + div					{ margin-top: 6pt; }
 #editlist .editlist-mtimebox				{ color: #666; }
+#userlist						{ margin-top: 1em; }
+#userlist .userlist-enabled				{ color: #333; }
+#userlist .userlist-disabled				{ color: #888; }
+#userlist > div > :first-child				{ margin-right: 1ex; }
+#userlist .userlist-self				{ opacity: 0.5; }
 
 @media only screen and (max-width: 360px), only screen and (max-device-width: 360px) {
 #loggedin nav						{ text-align: center; }

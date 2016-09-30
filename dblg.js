@@ -172,6 +172,31 @@
 		return(e);
 	}
 
+	function showhidelist(e, name, cond)
+	{
+		var i, list = e.getElementsByClassName(name);
+		for (i = 0; i < list.length; i++) 
+			if (cond)
+				show(list[i]);
+			else
+				hide(list[i]);
+	}
+
+
+	function showlist(e, name)
+	{
+		var i, list = e.getElementsByClassName(name);
+		for (i = 0; i < list.length; i++) 
+			show(list[i]);
+	}
+
+	function hidelist(e, name)
+	{
+		var i, list = e.getElementsByClassName(name);
+		for (i = 0; i < list.length; i++) 
+			hide(list[i]);
+	}
+
 	/*
 	 * Show element (or by element name).
 	 */
@@ -244,11 +269,6 @@
 		show('login');
 	}
 
-	function reload()
-	{
-		window.location.reload();
-	}
-
 	function parser(resp)
 	{
 		var res;
@@ -293,18 +313,13 @@
 
 	function uploadSuccess(resp, e)
 	{
-		var list, i, upres;
+		var upres;
 
 		if (null === (upres = parser(resp)))
 			return;
 
-		list = e.getElementsByClassName('submit');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
-		list = e.getElementsByClassName('pending');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-
+		showlist(e, 'submit');
+		hidelist(e, 'pending');
 		attr('submitform-media-result', 'value', upres.secure_url);
 		rattr('submitform-clipboard', 'disabled');
 	}
@@ -358,27 +373,99 @@
 			uploadSuccess, uploadProgress, root));
 	}
 
+	function userToggleSetup(e)
+	{
+		hidelist(e, 'userlist-enabled');
+		hidelist(e, 'userlist-disabled');
+		showlist(e, 'userlist-toggling');
+	}
+
+	function userToggle(e, id, val)
+	{
+		return(sendQuery('@CGIURI@/modenable.json?' +
+			'userid=' + id + '&enable=' + val,
+			function() {
+				return function() {
+					userToggleSetup(e);
+				};
+			}(e), blogeditor, blogeditor));
+	}
+
+	function adminUser(cln, selfu, u)
+	{
+		var list, j;
+
+		if (cln.classList.contains('userlist-self'))
+			cln.classList.remove('userlist-self');
+
+		if (selfu.id === u.id)
+			cln.classList.add('userlist-self');
+
+		list = cln.getElementsByClassName
+			('userlist-name');
+		for (j = 0; j < list.length; j++) 
+			repl(list[j], u.name);
+
+		list = cln.getElementsByClassName
+			('userlist-email-link');
+		for (j = 0; j < list.length; j++) 
+			attr(list[j], 'href', 'mailto:' + u.email);
+
+		showhidelist(cln, 'userlist-admin', 
+			u.attrs.admin);
+		hidelist(cln, 'userlist-toggling');
+		showhidelist(cln, 'userlist-enabled', 
+			! u.attrs.disabled);
+		showhidelist(cln, 'userlist-disabled', 
+			u.attrs.disabled);
+
+		list = cln.getElementsByClassName
+			('userlist-enabled');
+		for (j = 0; j < list.length; j++) 
+			if ( ! u.attrs.disabled)
+				list[j].onclick = function(ee, id) {
+					return function() {
+						return(userToggle(ee, id, 0));
+					};
+				}(cln, u.id);
+		list = cln.getElementsByClassName
+			('userlist-disabled');
+		for (j = 0; j < list.length; j++) 
+			if (u.attrs.disabled)
+				list[j].onclick = function(ee, id) {
+					return function() {
+						return(userToggle(ee, id, 1));
+					};
+				}(cln, u.id);
+
+		if (selfu.id === u.id) {
+			list = cln.getElementsByClassName
+				('userlist-enabled');
+			for (j = 0; j < list.length; j++) {
+				rattr(list[j], 'href');
+				list[j].onclick = null;
+			}
+			list = cln.getElementsByClassName
+				('userlist-disabled');
+			for (j = 0; j < list.length; j++) {
+				rattr(list[j], 'href');
+				list[j].onclick = null;
+			}
+		}
+	}
+
 	function admin(res)
 	{
-		var sub, e, list, i, j, cln;
+		var sub, e, i, cln;
 
 		e = find('userlist');
 		sub = e.children[0];
 		e.removeChild(sub);
+		while (e.firstChild)
+			e.removeChild(e.firstChild);
 		for (i = 0; i < res.users.length; i++) {
 			cln = sub.cloneNode(true);
-			list = cln.getElementsByClassName('userlist-name');
-			for (j = 0; j < list.length; j++) 
-				repl(list[j], res.users[i].name);
-			list = cln.getElementsByClassName('userlist-email-link');
-			for (j = 0; j < list.length; j++) 
-				attr(list[j], 'href', 'mailto:' + res.users[i].email);
-			list = cln.getElementsByClassName('userlist-admin');
-			for (j = 0; j < list.length; j++) 
-				if (res.users[i].attrs.admin)
-					show(list[j]);
-				else
-					hide(list[j]);
+			adminUser(cln, res.user, res.users[i]);
 			e.appendChild(cln);
 		}
 	}
@@ -481,6 +568,8 @@
 		e = find('editlist');
 		sub = e.children[0];
 		e.removeChild(sub);
+		while (e.firstChild)
+			e.removeChild(e.firstChild);
 
 		for (i = 0; i < pending.length; i++) {
 			cln = sub.cloneNode(true);
@@ -495,14 +584,8 @@
 			for (j = 0; j < list.length; j++)
 				repl(list[j], moment.unix
 					(pending[i].mtime).fromNow());
-			list = cln.getElementsByClassName
-				('editlist-mtimebox');
-			for (j = 0; j < list.length; j++)
-				if (pending[i].mtime !== 
-				    pending[i].ctime)
-					show(list[j]);
-				else
-					hide(list[j]);
+			showhidelist(cln, 'editlist-mtimebox',
+				pending[i].mtime !== pending[i].ctime);
 			list = cln.getElementsByClassName
 				('editlist-link');
 			for (j = 0; j < list.length; j++)
@@ -512,20 +595,10 @@
 				('editlist-title');
 			for (j = 0; j < list.length; j++)
 				repl(list[j], pending[i].title);
-			list = cln.getElementsByClassName
-				('editlist-titlebox');
-			for (j = 0; j < list.length; j++)
-				if (pending[i].title.length) 
-					show(list[j]);
-				else
-					hide(list[j]);
-			list = cln.getElementsByClassName
-				('editlist-notitlebox');
-			for (j = 0; j < list.length; j++)
-				if (pending[i].title.length) 
-					hide(list[j]);
-				else
-					show(list[j]);
+			showhidelist(cln, 'editlist-titlebox',
+				pending[i].title.length);
+			showhidelist(cln, 'editlist-notitlebox',
+				0 === pending[i].title.length);
 		}
 	}
 
@@ -546,6 +619,12 @@
 			show('label-admin');
 		else
 			hide('label-admin');
+
+		if (null !== mde) {
+			mde.value('');
+			mde.toTextArea();
+			mde = null;
+		}
 
 		mde = new SimpleMDE({
 			insertTexts: { 
@@ -635,58 +714,29 @@
 
 	function genericSetup(e)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('error');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('submit');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('pending');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
+		hidelist(e, 'error');
+		hidelist(e, 'submit');
+		showlist(e, 'pending');
 	}
 
 	function genericError(e, code)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('submit');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
-		list = e.getElementsByClassName('pending');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('error' + code);
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
+		showlist(e, 'submit');
+		hidelist(e, 'pending');
+		showlist(e, 'error' + code);
 	}
 
 	function reloadSuccess(e, resp)
 	{ 
-		if (null !== mde) {
-			mde.value('');
-			mde.toTextArea();
-			mde = null;
-		}
 		genericSuccess(e, resp);
 		blogeditor();
 	}
 
 	function genericSuccess(e, resp)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('error');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('submit');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
-		list = e.getElementsByClassName('pending');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
+		hidelist(e, 'error');
+		showlist(e, 'submit');
+		hidelist(e, 'pending');
 	}
 
 	function login()
@@ -737,52 +787,39 @@
 		var res = parser(resp);
 		var url;
 
-		if (null !== mde) {
-			mde.value('');
-			mde.toTextArea();
-			mde = null;
-		}
 		genericSuccess(e, resp);
 
-		if (null === res)
+		if (null === res) {
+			blogeditor();
 			return;
+		}
 
 		url = '@BLOGURI@';
 		if (url.length) {
 			url += '?entryid=' + res.id;
 			location.href = '@BLOGURI@?entryid=' + res.id;
 		} else
-			reload();
+			blogeditor();
 	}
 
 	function saveSetup(e)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('error');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('save');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		list = e.getElementsByClassName('saving');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
+		hidelist(e, 'error');
+		hidelist(e, 'save');
+		showlist(e, 'saving');
 	}
 
 	function saveSuccess(resp, e)
 	{
 		var res = parser(resp);
-		var list, i;
 
-		list = e.getElementsByClassName('save');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
-		list = e.getElementsByClassName('saving');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
-		if (null === res)
+		showlist(e, 'save');
+		hidelist(e, 'saving');
+
+		if (null === res) {
+			blogeditor();
 			return;
+		}
 		location.href = 
 			window.location.pathname + 
 			'?entryid=' + res.id;
@@ -790,14 +827,8 @@
 
 	function saveError(code, e)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('save');
-		for (i = 0; i < list.length; i++)
-			show(list[i]);
-		list = e.getElementsByClassName('saving');
-		for (i = 0; i < list.length; i++)
-			hide(list[i]);
+		showlist(e, 'save');
+		hidelist(e, 'saving');
 	}
 
 	/*
