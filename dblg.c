@@ -1232,7 +1232,7 @@ main(void)
 	}
 
 #ifdef	__OpenBSD__
-	if (-1 == pledge("stdio rpath cpath wpath flock", NULL)) {
+	if (-1 == pledge("stdio rpath cpath wpath flock fattr", NULL)) {
 		lwarn("pledge");
 		khttp_free(&r);
 		return(EXIT_FAILURE);
