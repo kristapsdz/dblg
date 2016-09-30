@@ -44,6 +44,7 @@ struct	user {
 	char		*name;
 	int64_t		 flags;
 #define	USER_ADMIN	 0x01
+#define	USER_DISABLED	 0x02
 	int64_t		 id;
 };
 
@@ -67,6 +68,7 @@ enum	page {
 	PAGE_LOGOUT,
 	PAGE_MOD_CLOUD,
 	PAGE_MOD_EMAIL,
+	PAGE_MOD_ENABLE,
 	PAGE_MOD_LINK,
 	PAGE_MOD_NAME,
 	PAGE_MOD_PASS,
@@ -77,11 +79,13 @@ enum	page {
 };
 
 enum	key {
+	KEY_ADMIN,
 	KEY_CLOUDKEY,
 	KEY_CLOUDNAME,
 	KEY_CLOUDPATH,
 	KEY_CLOUDSECRET,
 	KEY_EMAIL,
+	KEY_ENABLE,
 	KEY_ENTRYID,
 	KEY_LATITUDE,
 	KEY_LONGITUDE,
@@ -93,6 +97,7 @@ enum	key {
 	KEY_SESSCOOKIE,
 	KEY_SESSID,
 	KEY_TITLE,
+	KEY_USERID,
 	KEY__MAX
 };
 
@@ -112,7 +117,9 @@ enum	stmt {
 	STMT_USER_LIST,
 	STMT_USER_LOOKUP,
 	STMT_USER_MOD_CLOUD,
+	STMT_USER_MOD_DISABLE,
 	STMT_USER_MOD_EMAIL,
+	STMT_USER_MOD_ENABLE,
 	STMT_USER_MOD_HASH,
 	STMT_USER_MOD_LINK,
 	STMT_USER_MOD_NAME,
@@ -162,7 +169,8 @@ static	const char *const stmts[STMT__MAX] = {
 	/* STMT_SESS_NEW */
 	"INSERT INTO sess (cookie,userid) VALUES (?,?)",
 	/* STMT_USER_ADD */
-	"INSERT INTO user (name,email,hash) VALUES (?,?,?)",
+	"INSERT INTO user (name,email,hash,flags) "
+		"VALUES (?,?,?,?)",
 	/* STMT_USER_GET */
 	"SELECT " USER " FROM user WHERE id=?",
 	/* STMT_USER_LIST */
@@ -172,8 +180,12 @@ static	const char *const stmts[STMT__MAX] = {
 	/* STMT_USER_MOD_CLOUD */
 	"UPDATE user SET cloudkey=?,cloudsecret=?,"
 	       "cloudname=?,cloudpath=? WHERE id=?",
+	/* STMT_USER_MOD_DISABLE */
+	"UPDATE user SET flags=flags | ? WHERE id=?",
 	/* STMT_USER_MOD_EMAIL */
 	"UPDATE user SET email=? WHERE id=?",
+	/* STMT_USER_MOD_ENABLE */
+	"UPDATE user SET flags=flags & ~? WHERE id=?",
 	/* STMT_USER_MOD_HASH */
 	"UPDATE user SET hash=? WHERE id=?",
 	/* STMT_USER_MOD_LINK */
@@ -183,11 +195,13 @@ static	const char *const stmts[STMT__MAX] = {
 };
 
 static const struct kvalid keys[KEY__MAX] = {
+	{ NULL, "admin" }, /* KEY_ADMIN */
 	{ kvalid_string, "cloudkey" }, /* KEY_CLOUDKEY */
 	{ kvalid_string, "cloudname" }, /* KEY_CLOUDNAME */
 	{ kvalid_string, "cloudpath" }, /* KEY_CLOUDPATH */
 	{ kvalid_string, "cloudsecret" }, /* KEY_CLOUDSECRET */
 	{ kvalid_email, "email" }, /* KEY_EMAIL */
+	{ kvalid_uint, "enable" }, /* KEY_ENABLE */
 	{ kvalid_int, "entryid" }, /* KEY_ENTRYID */
 	{ kvalid_double, "latitude" }, /* KEY_LATITUDE */
 	{ kvalid_double, "longitude" }, /* KEY_LONGITUDE */
@@ -199,6 +213,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_uint, "sesscookie" }, /* KEY_SESSCOOKIE */
 	{ kvalid_int, "sessid" }, /* KEY_SESSID */
 	{ kvalid_stringne, "title" }, /* KEY_TITLE */
+	{ kvalid_int, "userid" }, /* KEY_USERID */
 };
 
 static const char *const pages[PAGE__MAX] = {
@@ -208,6 +223,7 @@ static const char *const pages[PAGE__MAX] = {
 	"logout", /* PAGE_LOGOUT */
 	"modcloud", /* PAGE_MOD_CLOUD */
 	"modemail", /* PAGE_MOD_EMAIL */
+	"modenable", /* PAGE_MOD_ENABLE */
 	"modlink", /* PAGE_MOD_LINK */
 	"modname", /* PAGE_MOD_NAME */
 	"modpass", /* PAGE_MOD_PASS */
@@ -400,6 +416,7 @@ db_entry_modify(struct ksql *sql, const struct user *user,
 	ksql_bind_int(stmt, 7, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: modified entry: %" PRId64, user->email, id);
 	return(id);
 }
 
@@ -429,6 +446,7 @@ db_entry_new(struct ksql *sql, const struct user *user,
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	ksql_lastid(sql, &id);
+	linfo("%s: new entry: %" PRId64, user->email, id);
 	return(id);
 }
 
@@ -540,6 +558,7 @@ db_user_mod_pass(struct ksql *sql,
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: changed password", u->email);
 }
 
 static int
@@ -556,6 +575,9 @@ db_user_mod_email(struct ksql *sql,
 	ksql_bind_int(stmt, 1, u->id);
 	c = ksql_stmt_cstep(stmt);
 	ksql_stmt_free(stmt);
+	if (KSQL_CONSTRAINT != c)
+		linfo("%s: changed email: %s", 
+			u->email, email);
 	return(KSQL_CONSTRAINT != c);
 }
 
@@ -567,6 +589,28 @@ bind_if_not_null(struct ksqlstmt *stmt, size_t pos, const char *v)
 		ksql_bind_null(stmt, pos);
 	else
 		ksql_bind_str(stmt, pos, v);
+}
+
+static void
+db_user_mod_enable(struct ksql *sql, 
+	const struct user *u, int64_t userid, int enable)
+{
+	struct ksqlstmt	*stmt;
+
+	if (enable)
+		ksql_stmt_alloc(sql, &stmt, 
+			stmts[STMT_USER_MOD_ENABLE], 
+			STMT_USER_MOD_ENABLE);
+	else
+		ksql_stmt_alloc(sql, &stmt, 
+			stmts[STMT_USER_MOD_DISABLE], 
+			STMT_USER_MOD_DISABLE);
+	ksql_bind_int(stmt, 0, USER_DISABLED);
+	ksql_bind_int(stmt, 1, userid);
+	ksql_stmt_step(stmt);
+	ksql_stmt_free(stmt);
+	linfo("%s: %s user: %" PRId64, u->email,
+		enable ? "enabled" : "disabled", userid);
 }
 
 static void
@@ -586,6 +630,7 @@ db_user_mod_cloud(struct ksql *sql, const struct user *u,
 	ksql_bind_int(stmt, 4, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: changed cloud parameters", u->email);
 }
 
 static void
@@ -604,11 +649,12 @@ db_user_mod_link(struct ksql *sql,
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: changed link", u->email);
 }
 
 static int
-db_user_add(struct ksql *sql, 
-	const char *email, const char *pass)
+db_user_add(struct ksql *sql, const struct user *u,
+	const char *email, const char *pass, int admin)
 {
 	struct ksqlstmt	*stmt;
 	char		 hash[64];
@@ -625,8 +671,10 @@ db_user_add(struct ksql *sql,
 	ksql_bind_str(stmt, 0, "Anonymous user");
 	ksql_bind_str(stmt, 1, email);
 	ksql_bind_str(stmt, 2, hash);
+	ksql_bind_int(stmt, 3, admin ? 1 : 0);
 	c = ksql_stmt_cstep(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: added user: %s", u->email, email);
 	return(KSQL_CONSTRAINT != c);
 }
 
@@ -643,6 +691,7 @@ db_user_mod_name(struct ksql *sql,
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: changed name", u->email);
 }
 
 static void
@@ -658,6 +707,7 @@ db_entry_delete(struct ksql *sql,
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
+	linfo("%s: deleted entry: %" PRId64, u->email, id);
 }
 
 static void
@@ -691,7 +741,10 @@ json_putuserdata(struct kjsonreq *req,
 		kjson_putnullp(req, "cloud");
 
 	kjson_objp_open(req, "attrs");
-	kjson_putboolp(req, "admin", USER_ADMIN & u->flags);
+	kjson_putboolp(req, "admin", 
+		USER_ADMIN & u->flags);
+	kjson_putboolp(req, "disabled", 
+		USER_DISABLED & u->flags);
 	kjson_obj_close(req);
 }
 
@@ -836,6 +889,22 @@ sendmodcloud(struct kreq *r, const struct user *u)
 }
 
 static void
+sendmodenable(struct kreq *r, const struct user *u)
+{
+	struct kpair	*kpe, *kpn;
+
+	if (NULL != (kpe = r->fieldmap[KEY_USERID]) &&
+	    NULL != (kpn = r->fieldmap[KEY_ENABLE]) &&
+	    u->id != kpe->parsed.i) {
+		db_user_mod_enable(r->arg, u,
+			kpe->parsed.i, 
+			kpn->parsed.i ? 1 : 0);
+		sendhttp(r, KHTTP_200);
+	} else
+		sendhttp(r, KHTTP_400);
+}
+
+static void
 sendmodemail(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
@@ -875,16 +944,18 @@ sendmodname(struct kreq *r, const struct user *u)
 static void
 sendadduser(struct kreq *r, const struct user *u)
 {
-	struct kpair	*kpe, *kpp;
+	struct kpair	*kpe, *kpp, *kpa;
 	int		 rc;
 
 	assert(NULL != u && USER_ADMIN & u->flags);
 
+	kpa = r->fieldmap[KEY_ADMIN];
+
 	rc = 0;
 	if (NULL != (kpe = r->fieldmap[KEY_EMAIL]) &&
 	    NULL != (kpp = r->fieldmap[KEY_PASS]))
-		rc = db_user_add(r->arg, 
-			kpe->parsed.s, kpp->parsed.s);
+		rc = db_user_add(r->arg, u, kpe->parsed.s, 
+			kpp->parsed.s, NULL != kpa);
 	sendhttp(r, rc ? KHTTP_200 : KHTTP_400);
 	if (rc) 
 		linfo("%s: added user", kpe->parsed.s);
@@ -1049,7 +1120,12 @@ sendlogin(struct kreq *r)
 	if (NULL == u) {
 		sendhttp(r, KHTTP_400);
 		return;
-	} 
+	} else if (USER_DISABLED & u->flags) {
+		linfo("%s: tried logging in when "
+			"disabled", u->email);
+		sendhttp(r, KHTTP_400);
+		return;
+	}
 
 	cookie = arc4random();
 	sid = db_sess_new(r->arg, cookie, u);
@@ -1183,8 +1259,19 @@ main(void)
 		return(EXIT_SUCCESS);
 	}
 
-	if (PAGE_ADD_USER == r.page &&
+	if ((PAGE_ADD_USER == r.page ||
+	     PAGE_MOD_ENABLE == r.page) &&
 	    (NULL == u || ! (USER_ADMIN & u->flags))) {
+		sendhttp(&r, KHTTP_404);
+		khttp_free(&r);
+		ksql_free(sql);
+		return(EXIT_SUCCESS);
+	}
+
+	if (PAGE_LOGIN != r.page && NULL != u && 
+	    USER_DISABLED & u->flags) {
+		linfo("%s: tried using site "
+			"when disabled", u->email);
 		sendhttp(&r, KHTTP_404);
 		khttp_free(&r);
 		ksql_free(sql);
@@ -1209,6 +1296,9 @@ main(void)
 		break;
 	case (PAGE_MOD_EMAIL):
 		sendmodemail(&r, u);
+		break;
+	case (PAGE_MOD_ENABLE):
+		sendmodenable(&r, u);
 		break;
 	case (PAGE_MOD_LINK):
 		sendmodlink(&r, u);
