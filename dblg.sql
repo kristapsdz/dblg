@@ -48,7 +48,8 @@ CREATE TABLE user (
 	-- The name of the cloud account for media storage, if applicable.
 	cloudname TEXT,
 	-- Bitmask of flags.
-	-- If set to 1, the user can administer other users.
+	-- If containing 0x01, the user can administer other users.
+	-- If containing 0x02, the user is disabled and can't login.
 	flags INTEGER NOT NULL DEFAULT(0),
 	-- Unique identifier.
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
