@@ -9,6 +9,8 @@ CREATE TABLE entry (
 	title TEXT NOT NULL,
 	-- Posting user.
 	userid INTEGER NOT NULL,
+	-- IETF language tag (as in RFC 2616, 3.10).
+	lang TEXT,
 	-- Latitude (decimal degrees) of post.
 	-- Both latitude and longitude are required for location.
 	latitude REAL,
@@ -35,6 +37,8 @@ CREATE TABLE user (
 	name TEXT NOT NULL,
 	-- E-mail address (and login identifier). 
 	email TEXT NOT NULL,
+	-- Default IETF language tag (as in RFC 2616, 3.10).
+	lang TEXT,
 	-- A link to their homepage, if applicable.
 	link TEXT,
 	-- Hash representation of password.

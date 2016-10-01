@@ -31,34 +31,36 @@
 #include <ksql.h>
 
 struct	cloud {	       
-	char		*key;
-	char		*secret;
-	char		*path;
-	char		*name;
-	int		 set;
+	char		*key; /* API key */
+	char		*secret; /* API secret */
+	char		*path; /* media directory */
+	char		*name; /* name of storage site */
+	int		 set; /* whether set or not */
 };
 
 struct	user {
-	struct cloud	 cloud;
-	char		*email;
-	char		*link;
-	char		*name;
+	struct cloud	 cloud; /* cloud settings */
+	char		*email; /* e-mail (and identifier) */
+	char		*link; /* link to user's website (or NULL) */
+	char		*name; /* user's public name */
+	char		*lang; /* default IETF Language (or NULL) */
 	int64_t		 flags;
-#define	USER_ADMIN	 0x01
-#define	USER_DISABLED	 0x02
+#define	USER_ADMIN	 0x01 /* administrator */
+#define	USER_DISABLED	 0x02 /* disabled */
 	int64_t		 id;
 };
 
 struct	entry {
-	char		*content;
-	char		*title;
-	time_t		 ctime;
-	time_t		 mtime;
-	int		 coords;
-	double		 lat;
-	double		 lng;
+	char		*content; /* non-binary content */
+	char		*title; /* non-binary title */
+	char		*lang; /* IETF language (or NULL) */
+	time_t		 ctime; /* created */
+	time_t		 mtime; /* last modified */
+	int		 coords; /* whether coords set */
+	double		 lat; /* decimal degree latitude */
+	double		 lng; /* decimal degree longitude */
 	int64_t		 flags;
-#define	ENTRY_PENDING	 0x01
+#define	ENTRY_PENDING	 0x01 /* pending (private) */
 	int64_t		 id;
 };
 
@@ -129,10 +131,10 @@ enum	stmt {
 
 #define	USER	"user.id,user.email,user.name,user.link," \
 		"user.cloudkey,user.cloudsecret,user.cloudname," \
-		"user.cloudpath,user.flags"
+		"user.cloudpath,user.flags,user.lang"
 #define	ENTRY	"entry.contents,entry.ctime,entry.id,entry.title," \
 		"entry.latitude,entry.longitude,entry.mtime," \
-		"entry.flags"
+		"entry.flags,entry.lang"
 
 static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_DELETE */
@@ -329,6 +331,7 @@ db_user_unfill(struct user *p)
 		return;
 	free(p->email);
 	free(p->link);
+	free(p->lang);
 	free(p->name);
 	free(p->cloud.key);
 	free(p->cloud.secret);
@@ -377,6 +380,7 @@ db_user_fill(struct user *p, struct ksqlstmt *stmt, size_t *pos)
 	col_if_not_null(&p->cloud.name, stmt, (*pos)++);
 	col_if_not_null(&p->cloud.path, stmt, (*pos)++);
 	p->flags = ksql_stmt_int(stmt, (*pos)++);
+	col_if_not_null(&p->lang, stmt, (*pos)++);
 }
 
 static void
@@ -387,6 +391,7 @@ db_entry_unfill(struct entry *p)
 		return;
 	free(p->content);
 	free(p->title);
+	free(p->lang);
 }
 
 static void
@@ -411,6 +416,7 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 	(*pos) += 2;
 	p->mtime = ksql_stmt_int(stmt, (*pos)++);
 	p->flags = ksql_stmt_int(stmt, (*pos)++);
+	col_if_not_null(&p->lang, stmt, (*pos)++);
 }
 
 static int64_t
@@ -768,6 +774,7 @@ json_putuserdata(struct kjsonreq *req,
 		USER_ADMIN & u->flags);
 	kjson_putboolp(req, "disabled", 
 		USER_DISABLED & u->flags);
+	json_if_not_null(req, "lang", u->lang);
 	kjson_obj_close(req);
 }
 
@@ -810,6 +817,7 @@ json_putentry(struct kjsonreq *req, const struct user *u,
 	kjson_putboolp(req, "pending", 
 		ENTRY_PENDING & entry->flags);
 	kjson_obj_close(req);
+	json_if_not_null(req, "lang", entry->lang);
 	kjson_obj_close(req);
 }
 
