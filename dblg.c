@@ -113,6 +113,8 @@ enum	stmt {
 	STMT_ENTRY_GET_PUBLIC,
 	STMT_ENTRY_LIST_PENDING,
 	STMT_ENTRY_LIST_PUBLIC,
+	STMT_ENTRY_LIST_PUBLIC_LANG,
+	STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT,
 	STMT_ENTRY_LIST_PUBLIC_LIMIT,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
@@ -161,6 +163,16 @@ static	const char *const stmts[STMT__MAX] = {
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 "
 		"ORDER BY entry.mtime DESC",
+	/* STMT_ENTRY_LIST_PUBLIC_LANG */
+	"SELECT " USER "," ENTRY " FROM entry "
+		"INNER JOIN user ON user.id=entry.userid "
+		"WHERE entry.flags=0 AND entry.lang=? "
+		"ORDER BY entry.mtime DESC",
+	/* STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT */
+	"SELECT " USER "," ENTRY " FROM entry "
+		"INNER JOIN user ON user.id=entry.userid "
+		"WHERE entry.flags=0 AND entry.lang=? "
+		"ORDER BY entry.mtime DESC LIMIT ?",
 	/* STMT_ENTRY_LIST_PUBLIC_LIMIT */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
@@ -1104,7 +1116,7 @@ static void
 sendpublic(struct kreq *r, const struct user *u)
 {
 	struct khead	*kr;
-	struct kpair	*kpi, *kplim;
+	struct kpair	*kpi, *kplim, *kpl;
 	struct kjsonreq	 req;
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
@@ -1114,17 +1126,29 @@ sendpublic(struct kreq *r, const struct user *u)
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 	kplim = r->fieldmap[KEY_LIMIT];
+	kpl = r->fieldmap[KEY_LANG];
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_GET_PUBLIC], 
 			STMT_ENTRY_GET_PUBLIC);
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
-	} else if (NULL != kplim) {
+	} else if (NULL != kplim && NULL == kpl) {
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LIMIT], 
 			STMT_ENTRY_LIST_PUBLIC_LIMIT);
 		ksql_bind_int(stmt, 0, kplim->parsed.i);
+	} else if (NULL != kplim && NULL != kpl) {
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT], 
+			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT);
+		ksql_bind_str(stmt, 0, kpl->parsed.s);
+		ksql_bind_int(stmt, 1, kplim->parsed.i);
+	} else if (NULL == kplim && NULL != kpl) {
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_ENTRY_LIST_PUBLIC_LANG], 
+			STMT_ENTRY_LIST_PUBLIC_LANG);
+		ksql_bind_str(stmt, 0, kpl->parsed.s);
 	} else
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC], 
@@ -1138,7 +1162,11 @@ sendpublic(struct kreq *r, const struct user *u)
 		if (first) {
 			first = 0;
 			snprintf(buf, sizeof(buf), 
-				"\"%" PRId64 "-%" PRId64 "-%lld\"", 
+				"\"%" PRId64 "-%s%s%" PRId64 "-%" 
+				PRId64 "-%lld\"", 
+				NULL != kplim ? kplim->parsed.i : -1,
+				NULL != kpl ? kpl->parsed.s : "",
+				NULL != kpl ? "-" : "",
 				NULL != u ? u->id : 0,
 				entry.id, (long long)entry.mtime);
 			if (NULL != kr && 
