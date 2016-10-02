@@ -134,7 +134,6 @@ footer a:hover						{ color: #444; }
 #userlist .userlist-enabled				{ color: #333; }
 #userlist .userlist-disabled				{ color: #888; }
 #userlist > div > :first-child				{ margin-right: 1ex; }
-#userlist .userlist-self				{ opacity: 0.5; }
 
 @media only screen and (max-width: 768px), only screen and (max-device-width: 768px) {
 #loggedin nav						{ text-align: left; 

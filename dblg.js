@@ -385,15 +385,9 @@
 			}(e), blogeditor, blogeditor));
 	}
 
-	function adminUser(cln, selfu, u)
+	function adminUser(cln, u)
 	{
 		var list, j;
-
-		if (cln.classList.contains('userlist-self'))
-			cln.classList.remove('userlist-self');
-
-		if (selfu.id === u.id)
-			cln.classList.add('userlist-self');
 
 		list = cln.getElementsByClassName
 			('userlist-name');
@@ -431,21 +425,6 @@
 						return(userToggle(ee, id, 1));
 					};
 				}(cln, u.id);
-
-		if (selfu.id === u.id) {
-			list = cln.getElementsByClassName
-				('userlist-enabled');
-			for (j = 0; j < list.length; j++) {
-				rattr(list[j], 'href');
-				list[j].onclick = null;
-			}
-			list = cln.getElementsByClassName
-				('userlist-disabled');
-			for (j = 0; j < list.length; j++) {
-				rattr(list[j], 'href');
-				list[j].onclick = null;
-			}
-		}
 	}
 
 	function admin(res)
@@ -458,9 +437,18 @@
 		while (e.firstChild)
 			e.removeChild(e.firstChild);
 		for (i = 0; i < res.users.length; i++) {
+			if (res.user.id === res.users[i].id)
+				continue;
 			cln = sub.cloneNode(true);
 			adminUser(cln, res.user, res.users[i]);
 			e.appendChild(cln);
+		}
+		if (res.users.length < 2) {
+			hide('userlist');
+			show('nouserlist');
+		} else {
+			show('userlist');
+			hide('nouserlist');
 		}
 	}
 

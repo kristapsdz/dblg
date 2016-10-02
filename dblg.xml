@@ -154,9 +154,14 @@
 							</span>
 							<a class="userlist-name userlist-email-link"></a>
 							<span class="userlist-admin" title="Administrator">
-								<i class="fa fa-exclamation-circle"></i>
+								<i class="fa fa-key"></i>
 							</span>
 						</div>
+					</div>
+					<div id="nouserlist">
+						<p>
+							<i>No other users.</i>
+						</p>
 					</div>
 					<form id="adduserform" method="post" action="@CGIURI@/adduser.json">
 						<p class="error error400 hide">
