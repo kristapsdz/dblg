@@ -87,7 +87,7 @@ VERSION	 = 0.0.1
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
-api: dblg.json
+api: dblg.json schema.png schema.html
 
 installserver: all
 	mkdir -p $(HTDOCS)
@@ -103,7 +103,7 @@ installwww: all
 
 installapi: api
 	mkdir -p $(APIDOCS)
-	install -m 0444 dblg.json $(APIDOCS)
+	install -m 0444 schema.html schema.png dblg.json $(APIDOCS)
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
@@ -117,8 +117,14 @@ installcgi: updatecgi
 	install -m 0666 dblg.db $(DATADIR)
 	chmod 0777 $(DATADIR)
 
+schema.html: dblg.sql
+	sqliteconvert dblg.sql >$@
+
+schema.png: dblg.sql
+	sqliteconvert -i dblg.sql >$@
+
 clean:
-	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db myproject.tgz dblg.json
+	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db myproject.tgz dblg.json schema.html schema.png
 	rm -rf dblg.dSYM cov-int
 
 dblg.db: dblg.sql
