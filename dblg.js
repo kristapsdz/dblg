@@ -688,9 +688,7 @@
 		url = '@REPURI@';
 		if (url.length) {
 			show('server');
-			find('server').onclick = function() {
-				location.href = '@REPURI@';
-			};
+			attr('server', 'href', '@REPURI@');
 		} else
 			hide('server');
 

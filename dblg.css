@@ -37,19 +37,19 @@ a							{ text-decoration: none; }
 							  max-height: 100em; }
 #loggedin nav						{ display: flex; 
 							  align-items: center;
-							  background-color: #6a6a6a;
+							  background-color: #5a5a5a;
 							  max-width: none;
 							  padding-bottom: 8pt; 
 							  padding-top: 8pt; }
 #loggedin nav .icony					{ transition: color 0.5s ease-in-out; }
+#loggedin nav a						{ color: #fff; }
 #submitform-geolocated					{ color: lightgreen; }
 #submitform-geolocating					{ color: orange; }
 #submitform-ungeolocated				{ color: red; }
-#loggedin nav > :nth-child(2)				{ flex: 1; 
-							  margin-right: 8pt;
-							  margin-left: 8pt; }
+#loggedin nav > * + *					{ margin-left: 8pt; }
+#loggedin nav > :nth-child(2)				{ flex: 1; }
 #loggedin > input ~ nav label				{ transition: color 0.2s ease-in-out;
-							  color: #ccc;
+							  color: #aaa;
 							  padding: 0 2pt;
 							  cursor: pointer; }
 #loggedin nav label + label				{ margin-left: 6pt; }
@@ -142,12 +142,16 @@ footer a:hover						{ color: #444; }
 							  padding-left: 4pt;
 							  padding-right: 4pt;
 							  margin-right: 0; }
-#loggedin nav label, #loggedin nav .icony		{ font-size: 14pt; }
-#loggedin nav > :nth-child(2)				{ margin-right: 6pt;
-							  margin-left: 6pt; }
+#loggedin nav a,
+#loggedin nav label, 
+#loggedin nav .icony					{ font-size: 14pt; }
 #entry .editor-toolbar a				{ width: 24px; }
 #entry .editor-toolbar i.separator			{ margin: 1pt; }
 #loggedin nav label + label				{ margin-left: 2pt; }
 button span						{ display: none; }
 label span						{ display: none; }
+#loggedin nav > * + *					{ margin-left: 4pt; }
+#login > *						{ padding-left: 4pt;
+							  padding-right: 4pt; }
+footer							{ text-align: center; }
 }

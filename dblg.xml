@@ -25,6 +25,10 @@
 		</section>
 		<section id="loaded">
 			<section id="login" class="hide">
+				<p>
+					Welcome to your <a href="https://github.com/kristapsdz/dblg">dblg</a> console!
+					Please log in.
+				</p>
 				<form class="styled" id="loginform" method="post" action="@CGIURI@/login.json">
 					<p class="error error400 hide">
 						Bad user and/or password.  Try again!
@@ -55,7 +59,6 @@
 				</form>
 				<footer>
 					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
-					<a href="https://github.com/kristapsdz/dblg"><i class="fa fa-fw fa-github"></i></a>
 				</footer>
 			</section>
 			<section id="loggedin" class="hide">
@@ -93,10 +96,16 @@
 							<span>Administration</span>
 						</label>
 					</div>
-					<button type="button" id="server">
-						<i class="fa fa-server"></i>
-						<span>Server</span>
-					</button>
+					<div>
+						<a title="Report issues" href="https://github.com/kristapsdz/dblg">
+							<i class="fa fa-fw fa-github"></i>
+						</a>
+					</div>
+					<div>
+						<a title="Server statistics" id="server">
+							<i class="fa fa-server"></i>
+						</a>
+					</div>
 					<button type="button" class="primary" id="logout">
 						Logout
 					</button>
@@ -393,7 +402,6 @@
 				</div>
 				<footer>
 					Copyright &copy; 2016, <a href="https://kristaps.bsd.lv">Kristaps Dzonsons</a>
-					<a href="https://github.com/kristapsdz/dblg"><i class="fa fa-fw fa-github"></i></a>
 				</footer>
 			</section>
 		</section>
