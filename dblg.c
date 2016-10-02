@@ -72,6 +72,7 @@ enum	page {
 	PAGE_MOD_CLOUD,
 	PAGE_MOD_EMAIL,
 	PAGE_MOD_ENABLE,
+	PAGE_MOD_LANG,
 	PAGE_MOD_LINK,
 	PAGE_MOD_NAME,
 	PAGE_MOD_PASS,
@@ -90,6 +91,7 @@ enum	key {
 	KEY_EMAIL,
 	KEY_ENABLE,
 	KEY_ENTRYID,
+	KEY_LANG,
 	KEY_LATITUDE,
 	KEY_LONGITUDE,
 	KEY_LINK,
@@ -124,6 +126,7 @@ enum	stmt {
 	STMT_USER_MOD_EMAIL,
 	STMT_USER_MOD_ENABLE,
 	STMT_USER_MOD_HASH,
+	STMT_USER_MOD_LANG,
 	STMT_USER_MOD_LINK,
 	STMT_USER_MOD_NAME,
 	STMT__MAX
@@ -191,6 +194,8 @@ static	const char *const stmts[STMT__MAX] = {
 	"UPDATE user SET flags=flags & ~? WHERE id=?",
 	/* STMT_USER_MOD_HASH */
 	"UPDATE user SET hash=? WHERE id=?",
+	/* STMT_USER_MOD_LANG */
+	"UPDATE user SET lang=? WHERE id=?",
 	/* STMT_USER_MOD_LINK */
 	"UPDATE user SET link=? WHERE id=?",
 	/* STMT_USER_MOD_NAME */
@@ -206,6 +211,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_email, "email" }, /* KEY_EMAIL */
 	{ kvalid_uint, "enable" }, /* KEY_ENABLE */
 	{ kvalid_int, "entryid" }, /* KEY_ENTRYID */
+	{ kvalid_string, "lang" }, /* KEY_LANG */
 	{ kvalid_double, "latitude" }, /* KEY_LATITUDE */
 	{ kvalid_double, "longitude" }, /* KEY_LONGITUDE */
 	{ kvalid_string, "link" }, /* KEY_LINK */
@@ -227,6 +233,7 @@ static const char *const pages[PAGE__MAX] = {
 	"modcloud", /* PAGE_MOD_CLOUD */
 	"modemail", /* PAGE_MOD_EMAIL */
 	"modenable", /* PAGE_MOD_ENABLE */
+	"modlang", /* PAGE_MOD_LANG */
 	"modlink", /* PAGE_MOD_LINK */
 	"modname", /* PAGE_MOD_NAME */
 	"modpass", /* PAGE_MOD_PASS */
@@ -663,6 +670,22 @@ db_user_mod_cloud(struct ksql *sql, const struct user *u,
 }
 
 static void
+db_user_mod_lang(struct ksql *sql, 
+	const struct user *u, const char *lang)
+{
+	struct ksqlstmt	*stmt;
+
+	ksql_stmt_alloc(sql, &stmt, 
+		stmts[STMT_USER_MOD_LANG], 
+		STMT_USER_MOD_LANG);
+	bind_if_not_null(stmt, 0, lang);
+	ksql_bind_int(stmt, 1, u->id);
+	ksql_stmt_step(stmt);
+	ksql_stmt_free(stmt);
+	linfo("%s: changed lang", u->email);
+}
+
+static void
 db_user_mod_link(struct ksql *sql, 
 	const struct user *u, const char *link)
 {
@@ -671,10 +694,7 @@ db_user_mod_link(struct ksql *sql,
 	ksql_stmt_alloc(sql, &stmt, 
 		stmts[STMT_USER_MOD_LINK], 
 		STMT_USER_MOD_LINK);
-	if (NULL != link)
-		ksql_bind_str(stmt, 0, link);
-	else
-		ksql_bind_null(stmt, 0);
+	bind_if_not_null(stmt, 0, link);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
@@ -753,10 +773,7 @@ json_putuserdata(struct kjsonreq *req,
 
 	kjson_putstringp(req, "name", u->name);
 	kjson_putstringp(req, "email", u->email);
-	if (NULL != u->link)
-		kjson_putstringp(req, "link", u->link);
-	else
-		kjson_putnullp(req, "link");
+	json_if_not_null(req, "link", u->link);
 	kjson_putintp(req, "id", u->id);
 	if ( ! public) {
 		kjson_objp_open(req, "cloud");
@@ -774,8 +791,8 @@ json_putuserdata(struct kjsonreq *req,
 		USER_ADMIN & u->flags);
 	kjson_putboolp(req, "disabled", 
 		USER_DISABLED & u->flags);
-	json_if_not_null(req, "lang", u->lang);
 	kjson_obj_close(req);
+	json_if_not_null(req, "lang", u->lang);
 }
 
 static void
@@ -892,13 +909,24 @@ sendsubmit(struct kreq *r, const struct user *u)
 }
 
 static void
+sendmodlang(struct kreq *r, const struct user *u)
+{
+	struct kpair	*kp;
+
+	kp = r->fieldmap[KEY_LANG];
+	db_user_mod_lang(r->arg, u, 
+		NULL != kp ? kp->parsed.s : "");
+	sendhttp(r, KHTTP_200);
+}
+
+static void
 sendmodlink(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
 	kp = r->fieldmap[KEY_LINK];
 	db_user_mod_link(r->arg, u, 
-		NULL != kp ? kp->parsed.s : NULL);
+		NULL != kp ? kp->parsed.s : "");
 	sendhttp(r, KHTTP_200);
 }
 
@@ -1338,6 +1366,9 @@ main(void)
 		break;
 	case (PAGE_MOD_ENABLE):
 		sendmodenable(&r, u);
+		break;
+	case (PAGE_MOD_LANG):
+		sendmodlang(&r, u);
 		break;
 	case (PAGE_MOD_LINK):
 		sendmodlink(&r, u);
