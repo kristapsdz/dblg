@@ -133,7 +133,7 @@ footer a:hover						{ color: #444; }
 #userlist						{ margin-top: 1em; }
 #userlist .userlist-enabled				{ color: #333; }
 #userlist .userlist-disabled				{ color: #888; }
-#userlist > div > :first-child				{ margin-right: 1ex; }
+#userlist > div > * + *					{ margin-left: 6pt; }
 
 @media only screen and (max-width: 768px), only screen and (max-device-width: 768px) {
 #loggedin nav						{ text-align: left; 
@@ -143,7 +143,7 @@ footer a:hover						{ color: #444; }
 							  margin-right: 0; }
 #loggedin nav a,
 #loggedin nav label, 
-#loggedin nav .icony					{ font-size: 14pt; }
+#loggedin nav .icony					{ font-size: 16pt; }
 #entry .editor-toolbar a				{ width: 24px; }
 #entry .editor-toolbar i.separator			{ margin: 1pt; }
 #loggedin nav label + label				{ margin-left: 2pt; }
@@ -153,4 +153,7 @@ label span						{ display: none; }
 #login > *						{ padding-left: 4pt;
 							  padding-right: 4pt; }
 footer							{ text-align: center; }
+#userlist > div						{ display: flex; }
+#userlist > div > :last-child				{ flex: 1; 
+							  text-align: right; }
 }

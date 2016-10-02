@@ -153,8 +153,10 @@
 								</a>
 							</span>
 							<a class="userlist-name userlist-email-link"></a>
-							<span class="userlist-admin" title="Administrator">
-								<i class="fa fa-key"></i>
+							<span>
+								<span class="userlist-admin" title="Administrator">
+									<i class="fa fa-key"></i>
+								</span>
 							</span>
 						</div>
 					</div>

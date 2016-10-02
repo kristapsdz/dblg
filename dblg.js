@@ -431,6 +431,15 @@
 	{
 		var sub, e, i, cln;
 
+		if (res.users.length < 2) {
+			hide('userlist');
+			show('nouserlist');
+			return;
+		} else {
+			show('userlist');
+			hide('nouserlist');
+		}
+
 		e = find('userlist');
 		sub = e.children[0];
 		e.removeChild(sub);
@@ -440,15 +449,8 @@
 			if (res.user.id === res.users[i].id)
 				continue;
 			cln = sub.cloneNode(true);
-			adminUser(cln, res.user, res.users[i]);
+			adminUser(cln, res.users[i]);
 			e.appendChild(cln);
-		}
-		if (res.users.length < 2) {
-			hide('userlist');
-			show('nouserlist');
-		} else {
-			show('userlist');
-			hide('nouserlist');
 		}
 	}
 
