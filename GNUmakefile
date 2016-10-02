@@ -87,6 +87,8 @@ VERSION	 = 0.0.1
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
+api: dblg.json
+
 installserver: all
 	mkdir -p $(HTDOCS)
 	install -m 0444 dblg.html dblg.min.js dblg.css $(HTDOCS)
@@ -99,7 +101,7 @@ installwww: all
 	mkdir -p $(HTDOCS)
 	install -m 0444 $(HTMLS) $(JSMINS) $(CSSS) $(HTDOCS)
 
-installapi:
+installapi: api
 	mkdir -p $(APIDOCS)
 	install -m 0444 dblg.json $(APIDOCS)
 
@@ -116,7 +118,7 @@ installcgi: updatecgi
 	chmod 0777 $(DATADIR)
 
 clean:
-	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db myproject.tgz
+	rm -f dblg $(HTMLS) $(JSMINS) $(OBJS) dblg.db myproject.tgz dblg.json
 	rm -rf dblg.dSYM cov-int
 
 dblg.db: dblg.sql
@@ -126,6 +128,9 @@ dblg.db: dblg.sql
 
 dblg: $(OBJS)
 	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
+
+dblg.json: dblg.in.json
+	sed -e "s!@VERSION@!$(VERSION)!g" dblg.in.json >$@
 
 .js.min.js:
 	sed -e "s!@HTURI@!$(HTURI)!g" \

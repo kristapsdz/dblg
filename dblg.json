@@ -1,9 +1,0 @@
-{
-  "swaggerVersion": "1.2",
-  "apis": [
-    {
-      "path": "/index.json",
-      "description": "Editor interface."
-    }
-  ]
-}

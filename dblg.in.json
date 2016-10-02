@@ -1,0 +1,41 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "dblg",
+    "description": "dynamic [simple] on-line blog utility",
+    "license": {
+      "name": "ISC license",
+      "url": "https://opensource.org/licenses/ISC"
+    },
+    "contact": {
+      "name": "Kristaps Dzonsons",
+      "email": "kristaps@bsd.lv",
+      "url": "https://kristaps.bsd.lv"
+    },
+    "version": "@VERSION@"
+  },
+  "paths": {
+    "/index.json": {
+      "get": {
+        "description": "Blog editor interface",
+        "parameters": [
+            {
+                "name": "entryid",
+                "in": "query",
+                "description": "Pending entry identifier",
+                "type": "integer",
+                "format": "int64"
+            }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "User and administrative information; and, if applicable, requested entry."
+          }
+        }
+      }
+    }
+  }
+}
