@@ -1116,40 +1116,52 @@ static void
 sendpublic(struct kreq *r, const struct user *u)
 {
 	struct khead	*kr;
-	struct kpair	*kpi, *kplim, *kpl;
+	struct kpair	*kpi, *kplim;
 	struct kjsonreq	 req;
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 first, i;
 	char		 buf[64];
+	const char	*lang;
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 	kplim = r->fieldmap[KEY_LIMIT];
-	kpl = r->fieldmap[KEY_LANG];
+	/* Can be NULL or empty: either way, disregard. */
+	lang = NULL == r->fieldmap[KEY_LANG] ? 
+		NULL : '\0' == *r->fieldmap[KEY_LANG]->parsed.s ?
+		NULL : r->fieldmap[KEY_LANG]->parsed.s;
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
+		/* 
+		 * If we're looking for a specific entry, we ignore all
+		 * of the other filters.
+		 */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_GET_PUBLIC], 
 			STMT_ENTRY_GET_PUBLIC);
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
-	} else if (NULL != kplim && NULL == kpl) {
+	} else if (NULL != kplim && NULL == lang) {
+		/* Filter by establishing a limit. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LIMIT], 
 			STMT_ENTRY_LIST_PUBLIC_LIMIT);
 		ksql_bind_int(stmt, 0, kplim->parsed.i);
-	} else if (NULL != kplim && NULL != kpl) {
+	} else if (NULL != kplim && NULL != lang) {
+		/* Filter by establishing a limit and language. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT], 
 			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT);
-		ksql_bind_str(stmt, 0, kpl->parsed.s);
+		ksql_bind_str(stmt, 0, lang);
 		ksql_bind_int(stmt, 1, kplim->parsed.i);
-	} else if (NULL == kplim && NULL != kpl) {
+	} else if (NULL == kplim && NULL != lang) {
+		/* Filter by language. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LANG], 
 			STMT_ENTRY_LIST_PUBLIC_LANG);
-		ksql_bind_str(stmt, 0, kpl->parsed.s);
+		ksql_bind_str(stmt, 0, lang);
 	} else
+		/* Do not filter at all: grab all. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC], 
 			STMT_ENTRY_LIST_PUBLIC);
@@ -1161,12 +1173,18 @@ sendpublic(struct kreq *r, const struct user *u)
 		db_entry_fill(&entry, stmt, &i);
 		if (first) {
 			first = 0;
+			/*
+			 * Etag tags into effect limit, language,
+			 * requesting user, and top-most entry time
+			 * (since these are sorted by mtime date, this
+			 * will change montonically increasing).
+			 */
 			snprintf(buf, sizeof(buf), 
 				"\"%" PRId64 "-%s%s%" PRId64 "-%" 
 				PRId64 "-%lld\"", 
 				NULL != kplim ? kplim->parsed.i : -1,
-				NULL != kpl ? kpl->parsed.s : "",
-				NULL != kpl ? "-" : "",
+				NULL != lang ? lang : "",
+				NULL != lang ? "-" : "",
 				NULL != u ? u->id : 0,
 				entry.id, (long long)entry.mtime);
 			if (NULL != kr && 
