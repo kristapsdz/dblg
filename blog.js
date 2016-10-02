@@ -363,6 +363,9 @@
 		if (null !== options.limit)
 			query += (0 === query.length ? '?' : '&') +
 				'limit=' + options.limit;
+		if (null !== options.lang)
+			query += (0 === query.length ? '?' : '&') +
+				'lang=' + options.lang;
 
 		return(sendQuery(cgiuri + '/public.json' + query,
 			loadSetup, null, loadSuccess));
