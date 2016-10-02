@@ -67,9 +67,8 @@ MarkDown.
 ## Documentation
 
 Beyond this document, you can also view the
-[database schema](https://kristaps.bsd.lv/dblg/schema.html) and, if you
-have a [Swagger UI](http://swagger.io/swagger-ui/), you can browse the
-RESTful API (in progress) at https://kristaps.bsd.lv/dblg/dblg.json.
+[database schema](https://kristaps.bsd.lv/dblg/schema.html) or the
+[RESTful API](https://kristaps.bsd.lv/dblg).
 
 ## Installation
 
