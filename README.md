@@ -5,6 +5,9 @@ blogging utility.
 dblg is a small, no-nonsense web application supporting the bare minimum
 required for publishing blog (or "micro-blog") content.
 
+I run it on Mac OS X and OpenBSD (with
+[pledge(2)](http://man.openbsd.org/pledge) support).
+
 It has three components:
 
 1. A back-end server.  This is a tiny CGI script written in C,
@@ -46,6 +49,19 @@ Some features:
 [Cloudinary](http://cloudinary.com/) (which I use for the
 [divelog](https://divelog.blue)).
 - Geolocation and coordinates attached to each entry (or suppressed).
+- Supports language tags.
+- Responsive layout for small displays.
+
+The default editor front-end uses [moment.js](http://momentjs.com/) for
+formatting dates, [SimpleMDE](https://simplemde.com/) for editing
+MarkDown, [clipboard.js](https://clipboardjs.com/) for copying to the
+clipboard (apparently this is hard?), and
+[js-sha1](https://github.com/emn178/js-sha1) for SHA1 hashing the cloud
+authorisation.
+
+The default viewer uses [moment.js](http://momentjs.com/) and
+[showdown](https://github.com/showdownjs/showdown) for formatting
+MarkDown.
 
 ## Installation
 
