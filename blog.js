@@ -346,10 +346,14 @@
 			options.blog = 
 				(typeof opts.blog === 'string') ? 
 				opts.blog : null;
+			options.lang = 
+				(typeof opts.lang === 'string') ? 
+				opts.lang : null;
 		} else {
 			options.editor = null;
 			options.limit = null;
 			options.blog = null;
+			options.lang = null;
 		}
 
 		query = '';
