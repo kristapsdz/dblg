@@ -51,6 +51,7 @@ Some features:
 - Geolocation and coordinates attached to each entry (or suppressed).
 - Supports language tags.
 - Responsive layout for small displays.
+- Strong HTTP caching with etags, full compression support.
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
 formatting dates, [SimpleMDE](https://simplemde.com/) for editing
@@ -62,6 +63,13 @@ authorisation.
 The default viewer uses [moment.js](http://momentjs.com/) and
 [showdown](https://github.com/showdownjs/showdown) for formatting
 MarkDown.
+
+## Documentation
+
+Beyond this document, you can also view the
+[database schema](https://kristaps.bsd.lv/dblg/schema.html) and, if you
+have a [Swagger UI](http://swagger.io/swagger-ui/), you can browse the
+RESTful API (in progress) at https://kristaps.bsd.lv/dblg/dblg.json.
 
 ## Installation
 
