@@ -298,6 +298,8 @@
 	function nogeolocate()
 	{
 		show('submitform-ungeolocated');
+		hide('submitform-geolocating');
+		hide('submitform-geolocated');
 	}
 	
 	function restart()
@@ -468,6 +470,7 @@
 		attr('user-input-link', 'value', u.link);
 		attr('user-input-lang', 'value', u.lang);
 		attr('user-input-name', 'value', u.name);
+		attr('submitform-lang', 'value', u.lang);
 		cloudInit(u.cloud);
 	}
 
