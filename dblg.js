@@ -324,24 +324,16 @@
 		rattr('submitform-clipboard', 'disabled');
 	}
 
-	function uploadProgress(pct, e)
+	function uploadProgress(pct)
 	{
-		var list, i;
-
-		list = e.getElementsByClassName('percentage');
-		for (i = 0; i < list.length; i++) {
-			while (list[i].firstChild)
-				list[i].removeChild(list[i].firstChild);
-			list[i].appendChild(document.createTextNode(pct));
-		}
+		attr('submitform-media-result', 'value', 'Uploading: ' + pct + '%');
 	}
 
 	function uploadSetup(e)
 	{
 
 		genericSetup(e);
-		uploadProgress(0, e);
-		attr('submitform-media-result', 'value', '');
+		uploadProgress(0);
 		attr('submitform-clipboard', 'disabled', 'disabled');
 	}
 
@@ -369,7 +361,7 @@
 		url = 'https://api.cloudinary.com/v1_1/' + 
 			u.cloud.name + '/upload';
 
-		return(sendPost(url, fd, genericSetup, genericError, 
+		return(sendPost(url, fd, uploadSetup, genericError, 
 			uploadSuccess, uploadProgress, root));
 	}
 
@@ -473,8 +465,8 @@
 	function userInit(u)
 	{
 		attr('user-input-email', 'value', u.email);
-		attr('user-input-link', 'value', 
-			null !== u.link ? u.link : '');
+		attr('user-input-link', 'value', u.link);
+		attr('user-input-lang', 'value', u.lang);
 		attr('user-input-name', 'value', u.name);
 		cloudInit(u.cloud);
 	}
@@ -653,13 +645,17 @@
 		show('loggedin');
 		hide('login');
 
-		rattr('submitform-media-btn', 'disabled');
-		find('submitform-media-btn').onclick = 
-			function(user) {
-				return function() {
-					uploadCloud(res.user);
-				};
-			}(res.user);
+		if (res.user.cloud.set) {
+			show('mediaform');
+			find('submitform-media').onchange = 
+				function(user) {
+					return function() {
+						uploadCloud(res.user);
+					};
+				}(res.user);
+		} else
+			hide('mediaform');
+
 		if (res.user.attrs.admin)
 			admin(res);
 
@@ -676,6 +672,7 @@
 
 		find('modpassform').onsubmit = modpass;
 		find('modlinkform').onsubmit = modlink;
+		find('modlangform').onsubmit = modlang;
 		find('modemailform').onsubmit = modemail;
 		find('modnameform').onsubmit = modname;
 		find('modcloudform').onsubmit = modcloud;
@@ -684,8 +681,6 @@
 		find('submitform').onsubmit = submit;
 		find('submitform-save').onclick = save;
 		find('logout').onclick = logout;
-
-		attr('submitform-media-btn', 'disabled', 'disabled');
 
 		url = '@REPURI@';
 		if (url.length) {
@@ -744,6 +739,12 @@
 		var e = find('loginform');
 		return(sendForm(e, genericSetup, 
 			genericError, reloadSuccess));
+	}
+
+	function modlang()
+	{
+		return(sendForm(find('modlangform'), 
+			genericSetup, genericError, reloadSuccess));
 	}
 
 	function modlink()

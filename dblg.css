@@ -4,13 +4,15 @@ body							{ margin: 0;
 							  font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
 							  position: relative; }
 .hide							{ display: none; }
+#loading						{ background-color: #666; 
+							  color: #ddd; }
 #loading, #loaded					{ height: 100%; 
-							  width: 95%;
-							  margin-left: auto;
-							  margin-right: auto;
-							  position: relative; }
-#loggedin						{ max-width: 60em;
 							  width: 100%;
+							  position: relative; }
+#loggedin						{ width: 100%; }
+#loggedin > *						{ max-width: 800px; 
+							  padding-left: 4pt;
+							  padding-right: 4pt;
 							  margin-left: auto;
 							  margin-right: auto; }
 #loadingmsg, #login					{ position: absolute;
@@ -33,32 +35,40 @@ a							{ text-decoration: none; }
 #show-edits:checked ~ #edits,
 #show-entry:checked ~ #entry				{ opacity: 1; 
 							  max-height: 100em; }
-#loggedin > input ~ nav label				{ border-bottom: 2px solid transparent; 
-							  transition: border-bottom 0.2s ease-in-out;
+#loggedin nav						{ display: flex; 
+							  align-items: center;
+							  background-color: #6a6a6a;
+							  max-width: none;
+							  padding-bottom: 8pt; 
+							  padding-top: 8pt; }
+#loggedin nav .icony					{ transition: color 0.5s ease-in-out; }
+#submitform-geolocated					{ color: lightgreen; }
+#submitform-geolocating					{ color: orange; }
+#submitform-ungeolocated				{ color: red; }
+#loggedin nav > :nth-child(2)				{ flex: 1; 
+							  margin-right: 8pt;
+							  margin-left: 8pt; }
+#loggedin > input ~ nav label				{ transition: color 0.2s ease-in-out;
+							  color: #ccc;
 							  padding: 0 2pt;
 							  cursor: pointer; }
-#loggedin nav						{ margin-bottom: 8pt; 
-							  margin-top: 8pt;
-							  border-bottom: 2px solid rgba(255, 153, 0, 0.1); }
 #loggedin nav label + label				{ margin-left: 6pt; }
-#loggedin nav label:hover				{ border-bottom: 2px solid rgba(255, 153, 0, 0.4); }
+#loggedin nav button + button				{ margin-left: 2pt; }
+#loggedin nav label:hover				{ color: #eee; }
 #show-admin:checked ~ nav #label-admin,
 #show-usermod:checked ~ nav #label-usermod,
 #show-edits:checked ~ nav #label-edits,
-#show-entry:checked ~ nav #label-entry			{ border-bottom: 2px solid orange; }
+#show-entry:checked ~ nav #label-entry			{ color: #fff; }
 #usermod form + form					{ margin-top: 4pt; }
-#intro							{ display: flex; 
-							  align-items: center;
-							  padding: 8pt 2pt; }
-#intro > div:last-child					{ flex: 1; 
-							  text-align: right; }
-#intro .intro						{ font-size: 14pt; }
 #entry > div						{ padding-bottom: 0.5em; }
 #contentform						{ padding-bottom: 0; 
+							  margin-top: 1em;
 							  margin-bottom: 0; }
 #submitform-existing 					{ padding-top: 0.5em; }
 #submitform-existing a					{ color: blue; }
-
+#mediaform-pair						{ display: flex; }
+#mediaform-pair > :first-child				{ flex: 1; 
+							  margin-right: 4pt; }
 fieldset						{ border: none;
 							  margin: 1em 0;
 							  padding: 0; }
@@ -126,10 +136,18 @@ footer a:hover						{ color: #444; }
 #userlist > div > :first-child				{ margin-right: 1ex; }
 #userlist .userlist-self				{ opacity: 0.5; }
 
-@media only screen and (max-width: 360px), only screen and (max-device-width: 360px) {
-#loggedin nav						{ text-align: center; }
+@media only screen and (max-width: 768px), only screen and (max-device-width: 768px) {
+#loggedin nav						{ text-align: left; 
+							  margin-left: 0;
+							  padding-left: 4pt;
+							  padding-right: 4pt;
+							  margin-right: 0; }
+#loggedin nav label, #loggedin nav .icony		{ font-size: 14pt; }
+#loggedin nav > :nth-child(2)				{ margin-right: 6pt;
+							  margin-left: 6pt; }
 #entry .editor-toolbar a				{ width: 24px; }
 #entry .editor-toolbar i.separator			{ margin: 1pt; }
+#loggedin nav label + label				{ margin-left: 2pt; }
 button span						{ display: none; }
 label span						{ display: none; }
 }

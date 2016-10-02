@@ -63,44 +63,43 @@
 				<input type="radio" name="shown" value="2" id="show-entry" checked="checked" />
 				<input type="radio" name="shown" value="3" id="show-admin" />
 				<input type="radio" name="shown" value="3" id="show-edits" />
-				<section id="intro">
-					<div>
-						<span id="submitform-geolocated" class="hide">
-							<i class="fa fa-fw fa-globe"></i>
-							Location ok
-						</span>
-						<span id="submitform-ungeolocated" class="hide">
-							<i class="fa fa-fw fa-exclamation-circle"></i>
-							No location
-						</span>
-						<span id="submitform-geolocating" class="hide">
-							<i class="fa fa-fw fa-pulse fa-globe"></i>
-							Locating...
-						</span>
-					</div>
-					<div>
-						<button type="button" id="server">
-							<i class="fa fa-server"></i>
-							<span>Server</span>
-						</button>
-						<button type="button" class="primary" id="logout">
-							Logout
-						</button>
-					</div>
-				</section>
 				<nav>
-					<label id="label-entry" for="show-entry">
-						Publish <span>entry</span>
-					</label>
-					<label id="label-usermod" for="show-usermod">
-						User data
-					</label>
-					<label id="label-admin" for="show-admin">
-						User admin
-					</label>
-					<label id="label-edits" for="show-edits">
-						Pending <span>entries</span>
-					</label>
+					<div>
+						<span id="submitform-geolocated" class="hide icony" title="Geolocated">
+							<i class="fa fa-fw fa-globe"></i>
+						</span>
+						<span id="submitform-ungeolocated" class="hide icony" title="Geolocation failed">
+							<i class="fa fa-fw fa-exclamation-circle"></i>
+						</span>
+						<span id="submitform-geolocating" class="hide icony" title="Geolocating...">
+							<i class="fa fa-fw fa-pulse fa-globe"></i>
+						</span>
+					</div>
+					<div>
+						<label id="label-entry" for="show-entry" title="Compose entry">
+							<i class="fa fa-edit"></i> 
+							<span>Compose entry</span>
+						</label>
+						<label id="label-usermod" for="show-usermod" title="Your account">
+							<i class="fa fa-user"></i>
+							<span>Your account</span>
+						</label>
+						<label id="label-edits" for="show-edits" title="Pending entries">
+							<i class="fa fa-folder-open"></i>
+							<span>Pending entries</span>
+						</label>
+						<label id="label-admin" for="show-admin" title="Administration">
+							<i class="fa fa-key"></i>
+							<span>Administration</span>
+						</label>
+					</div>
+					<button type="button" id="server">
+						<i class="fa fa-server"></i>
+						<span>Server</span>
+					</button>
+					<button type="button" class="primary" id="logout">
+						Logout
+					</button>
 				</nav>
 				<div id="edits">
 					<div id="editlist">
@@ -205,11 +204,29 @@
 							</button>
 						</div>
 					</form>
+					<form id="modlangform" method="post" action="@CGIURI@/modlang.json">
+						<fieldset>
+							<div>
+								<label>Default language</label>
+								<div><input type="text" id="user-input-lang" name="lang" placeholder="Default IETF language" /></div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-language"></i>
+								Change
+							</button>
+							<button type="button" disabled="disabled" class="hide pending">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Changing...
+							</button>
+						</div>
+					</form>
 					<form id="modlinkform" method="post" action="@CGIURI@/modlink.json">
 						<fieldset>
 							<div>
 								<label>User page</label>
-								<div><input type="url" id="user-input-link" name="link" required="required" /></div>
+								<div><input type="url" id="user-input-link" name="link" placeholder="Link to public homepage" /></div>
 							</div>
 						</fieldset>
 						<div class="buttons">
@@ -313,22 +330,15 @@
 								<div><input type="file" id="submitform-media" /></div>
 							</div>
 							<div>
-								<div><input type="text" id="submitform-media-result" placeholder="Waiting for upload..." readonly="readonly" /></div>
+								<div id="mediaform-pair">
+									<input type="text" id="submitform-media-result" placeholder="Waiting for upload..." readonly="readonly" />
+									<button type="button" disabled="disabled" id="submitform-clipboard" data-clipboard-target="#submitform-media-result">
+										<i class="fa fa-clipboard"></i>
+									</button>
+								</div>
 							</div>
 						</fieldset>
 						<div class="buttons">
-							<button type="button" class="submit" id="submitform-media-btn">
-								<i class="fa fa-cloud-upload"></i>
-								Submit
-							</button>
-							<button type="button" class="pending hide">
-								<i class="fa fa-spinner fa-pulse"></i>
-								Submitting... <span class="percentage"></span>%
-							</button>
-							<button type="button" disabled="disabled" id="submitform-clipboard" data-clipboard-target="#submitform-media-result">
-								<i class="fa fa-clipboard"></i>
-								Clipboard
-							</button>
 						</div>
 					</div>
 					<div id="contentform">
@@ -336,6 +346,9 @@
 						<textarea id="markdown"></textarea>
 					</div>
 					<form id="submitform" method="post" action="@CGIURI@/submit.json">
+						<div class="error error400 hide">
+							You must fill out entry content and title to publish.
+						</div>
 						<input type="hidden" name="entryid" id="submitform-entryid" />
 						<input type="hidden" name="markdown" id="submitform-markdowninput" />
 						<input type="hidden" name="latitude" id="submitform-latitude" disabled="disabled" />
@@ -349,6 +362,10 @@
 								<label for="submitform-nocoords">
 									<input type="checkbox" id="submitform-nocoords" /> Hide location
 								</label>
+							</div>
+							<div>
+								<label for="submitform-lang">Language</label>
+								<div><input id="submitform-lang" type="text" name="lang" /></div>
 							</div>
 						</fieldset>
 						<div class="buttons">
