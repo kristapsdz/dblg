@@ -94,6 +94,7 @@ enum	key {
 	KEY_LANG,
 	KEY_LATITUDE,
 	KEY_LONGITUDE,
+	KEY_LIMIT,
 	KEY_LINK,
 	KEY_MARKDOWN,
 	KEY_NAME,
@@ -112,6 +113,7 @@ enum	stmt {
 	STMT_ENTRY_GET_PUBLIC,
 	STMT_ENTRY_LIST_PENDING,
 	STMT_ENTRY_LIST_PUBLIC,
+	STMT_ENTRY_LIST_PUBLIC_LIMIT,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
 	STMT_SESS_DEL,
@@ -159,6 +161,11 @@ static	const char *const stmts[STMT__MAX] = {
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 "
 		"ORDER BY entry.mtime DESC",
+	/* STMT_ENTRY_LIST_PUBLIC_LIMIT */
+	"SELECT " USER "," ENTRY " FROM entry "
+		"INNER JOIN user ON user.id=entry.userid "
+		"WHERE entry.flags=0 "
+		"ORDER BY entry.mtime DESC LIMIT ?",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
 		"longitude=?,mtime=?,flags=?,lang=? "
@@ -214,6 +221,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_string, "lang" }, /* KEY_LANG */
 	{ kvalid_double, "latitude" }, /* KEY_LATITUDE */
 	{ kvalid_double, "longitude" }, /* KEY_LONGITUDE */
+	{ kvalid_uint, "limit" }, /* KEY_LIMIT */
 	{ kvalid_string, "link" }, /* KEY_LINK */
 	{ kvalid_stringne, "markdown" }, /* KEY_MARKDOWN */
 	{ kvalid_stringne, "name" }, /* KEY_NAME */
@@ -1096,7 +1104,7 @@ static void
 sendpublic(struct kreq *r, const struct user *u)
 {
 	struct khead	*kr;
-	struct kpair	*kpi;
+	struct kpair	*kpi, *kplim;
 	struct kjsonreq	 req;
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
@@ -1105,12 +1113,18 @@ sendpublic(struct kreq *r, const struct user *u)
 	char		 buf[64];
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
+	kplim = r->fieldmap[KEY_LIMIT];
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID])) {
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_GET_PUBLIC], 
 			STMT_ENTRY_GET_PUBLIC);
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
+	} else if (NULL != kplim) {
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_ENTRY_LIST_PUBLIC_LIMIT], 
+			STMT_ENTRY_LIST_PUBLIC_LIMIT);
+		ksql_bind_int(stmt, 0, kplim->parsed.i);
 	} else
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC], 

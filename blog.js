@@ -358,7 +358,12 @@
 
 		query = '';
 		if (null !== (entryid = getQueryVariable('entryid')))
-			query = '?entryid=' + entryid;
+			query += (0 === query.length ? '?' : '&') +
+				'entryid=' + entryid;
+		if (null !== options.limit)
+			query += (0 === query.length ? '?' : '&') +
+				'limit=' + options.limit;
+
 		return(sendQuery(cgiuri + '/public.json' + query,
 			loadSetup, null, loadSuccess));
 	}
