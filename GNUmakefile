@@ -67,6 +67,9 @@ BLOGURI = /blog.html
 # This is by the login page's "cancel" button.
 # If empty, the button is removed.
 SITEURI = /index.html
+#
+# File-system location (directory) of Swagger API.
+APIDOCS = /var/www/htdocs/api-docs
 
 # Override these with an optional local file.
 sinclude GNUmakefile.local
@@ -95,6 +98,10 @@ installclient: all
 installwww: all
 	mkdir -p $(HTDOCS)
 	install -m 0444 $(HTMLS) $(JSMINS) $(CSSS) $(HTDOCS)
+
+installapi:
+	mkdir -p $(APIDOCS)
+	install -m 0444 dblg.json $(APIDOCS)
 
 updatecgi: all
 	mkdir -p $(CGIBIN)
