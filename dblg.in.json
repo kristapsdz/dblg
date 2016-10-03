@@ -31,6 +31,13 @@
 					"application/json"
 				],
 				"responses": {
+					"403": {
+						"description": "User not logged in or disabled",
+						"schema": {
+							"type": "object",
+							"properties": { }
+						}
+					},
 					"200": {
 						"description": "User and administrative information; and, if applicable, requested entry.",
 						"schema": {
@@ -39,6 +46,10 @@
 								"user": {
 									"description": "Currently logged-in user",
 									"$ref": "#/definitions/user"
+								},
+								"entry": {
+									"description": "If entryid was specified, the resulting entry (or null)",
+									"$ref": "#/definitions/entry"
 								},
 								"pending": {
 									"type": "array",
@@ -55,7 +66,7 @@
 									}
 								}
 							},
-							"required": [ "user", "users" ]
+							"required": [ "user", "users", "pending" ]
 						}
 					}
 				}
@@ -67,6 +78,20 @@
 			"description": "A public or private dblg entry",
 			"type": "object",
 			"properties": {
+				"lang": {
+					"description": "Language of entry or empty string",
+					"type": "string"
+				},
+				"attrs": {
+					"description": "Entry attributes",
+					"type": "object",
+					"properties": {
+						"pending": {
+							"description": "The entry is pending (private)",
+							"type": "boolean"
+						}
+					}
+				},
 				"coords": {
 					"description": "Coordinates at the time of editing",
 					"type": "object",
