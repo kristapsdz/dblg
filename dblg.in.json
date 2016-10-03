@@ -34,7 +34,28 @@
 					"200": {
 						"description": "User and administrative information; and, if applicable, requested entry.",
 						"schema": {
-							"$ref": "#/definitions/user"
+							"type": "object",
+							"properties": {
+								"user": {
+									"description": "Currently logged-in user",
+									"$ref": "#/definitions/user"
+								},
+								"pending": {
+									"type": "array",
+									"description": "List of pending entries",
+									"items": {
+										"$ref": "#/definitions/entry"
+									}
+								},
+								"users": {
+									"type": "array",
+									"description": "List of all users (only if an administrator, else zero-length)",
+									"items": {
+										"$ref": "#/definitions/user"
+									}
+								}
+							},
+							"required": [ "user", "users" ]
 						}
 					}
 				}
@@ -42,6 +63,48 @@
 		}
 	},
 	"definitions": {
+		"entry": {
+			"description": "A public or private dblg entry",
+			"type": "object",
+			"properties": {
+				"coords": {
+					"description": "Coordinates at the time of editing",
+					"type": "object",
+					"properties": {
+						"lng": {
+							"description": "Longitude in decimal degrees",
+							"type": "double"
+						},
+						"lat": {
+							"description": "Latitude in decimal degrees",
+							"type": "double"
+						}
+					},
+					"required": [ "lat", "lng" ]
+				},
+				"title": {
+					"description": "Entry title (may be zero length only if not yet published)",
+					"type": "string"
+				},
+				"content": {
+					"description": "Content (may be zero length only if not yet published)",
+					"type": "string"
+				},
+				"id": {
+					"description": "Unique identifier",
+					"type": "integer"
+				},
+				"mtime": {
+					"description": "Last modified time (UNIX epoch)",
+					"type": "integer"
+				},
+				"ctime": {
+					"description": "Creation time (UNIX epoch)",
+					"type": "integer"
+				}
+			},
+			"required": [ "title", "content", "mtime", "ctime", "id" ]
+		},
 		"user": {
 			"description": "A user for a dblg installation",
 			"type": "object",
@@ -58,26 +121,58 @@
 					"description": "Public site address (relative or absolute) or an empty string",
 					"type": "string"
 				},
+				"lang": {
+					"description": "Default IETF language tag for user's entries or an empty string",
+					"type": "string"
+				},
 				"id": {
 					"description": "Unique numeric identifier",
 					"type": "string"
 				},
 				"cloud": {
-					"description": "Cloud specification (only for logged-in users looking at their own user object)",
+					"description": "Cloud specification (only for logged-in users looking at their own user object, else null)",
 					"type": "object",
 					"properties": {
+						"set": {
+							"description": "Whether all cloud values have been set",
+							"type": "boolean"
+						},
+						"path": {
+							"description": "Namespace (directory) of uploaded images or empty string",
+							"type": "string"
+						},
+						"name": {
+							"description": "Name of cloud account or empty string",
+							"type": "string"
+						},
 						"key": {
 							"description": "API key (public portion) or empty string",
-							"type": "string",
+							"type": "string"
 						},
 						"secret": {
 							"description": "API secret (private portion) or empty string",
-							"type": "string",
+							"type": "string"
 						}
-					}
+					},
+					"required": ["set", "path", "name", "key", "secret"]
+				},
+				"attrs": {
+					"description": "User attributes",
+					"type": "object",
+					"properties": {
+						"admin": {
+							"description": "Whether the user has administrator rights",
+							"type": "boolean"
+						},
+						"disabled": {
+							"description": "Whether the user has been disabled (cannot log in)",
+							"type": "boolean"
+						}
+					},
+					"required": ["admin", "disabled"]
 				}
 			},
-			"required": ["name", "email", "link", "id"]
+			"required": ["name", "email", "link", "id", "attrs"]
 		}
 	}
 }
