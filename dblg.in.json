@@ -10,11 +10,92 @@
 		"contact": {
 			"name": "Kristaps Dzonsons",
 			"email": "kristaps@bsd.lv",
-			"url": "https://kristaps.bsd.lv"
+			"url": "https://github.com/kristapsdz/dblg"
 		},
 		"version": "@VERSION@"
 	},
 	"paths": {
+		"/logout.json": {
+			"get": {
+				"description": "De-authenticate user session",
+				"parameters": [
+					{
+						"name": "sessid",
+						"in": "cookie",
+						"description": "Session identifier",
+						"type": "integer",
+						"format": "int64",
+						"required": true
+					},
+					{
+						"name": "sesscookie",
+						"in": "cookie",
+						"description": "Session cookie",
+						"type": "integer",
+						"format": "int64",
+						"required": true
+					}
+				],
+				"produces": [
+					"application/json"
+				],
+				"responses": {
+					"200": {
+						"description": "User has been deauthenticated",
+						"schema": {
+							"type": "object",
+							"properties": { }
+						}
+					}
+				}
+			}
+		},
+		"/login.json": {
+			"post": {
+				"description": "Create an authenticated user session",
+				"parameters": [
+					{
+						"name": "email",
+						"in": "query",
+						"description": "User identifier (e-mail)",
+						"type": "string",
+						"required": true
+					},
+					{
+						"name": "password",
+						"in": "query",
+						"description": "User password",
+						"type": "password",
+						"required": true
+					}
+				],
+				"produces": [
+					"application/json"
+				],
+				"responses": {
+					"400": {
+						"description": "User not found (or disabled) or bad password",
+						"schema": {
+							"type": "object",
+							"properties": { }
+						}
+					},
+					"200": {
+						"description": "User and administrative information; and, if applicable, requested entry.",
+						"schema": {
+							"type": "object",
+							"properties": { }
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "Key-value pairs for the authentication identifier and cookie",
+								"type": "string"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/index.json": {
 			"get": {
 				"description": "Blog editor interface",
@@ -24,7 +105,24 @@
 						"in": "query",
 						"description": "Pending entry identifier",
 						"type": "integer",
-						"format": "int64"
+						"format": "int64",
+						"required": false
+					},
+					{
+						"name": "sessid",
+						"in": "cookie",
+						"description": "Session identifier",
+						"type": "integer",
+						"format": "int64",
+						"required": false
+					},
+					{
+						"name": "sesscookie",
+						"in": "cookie",
+						"description": "Session cookie",
+						"type": "integer",
+						"format": "int64",
+						"required": false
 					}
 				],
 				"produces": [
@@ -32,7 +130,7 @@
 				],
 				"responses": {
 					"403": {
-						"description": "User not logged in or disabled",
+						"description": "Session invalid or user disabled",
 						"schema": {
 							"type": "object",
 							"properties": { }

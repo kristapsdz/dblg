@@ -136,7 +136,9 @@ dblg: $(OBJS)
 	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
 
 dblg.json: dblg.in.json
+	@rm -f $@
 	sed -e "s!@VERSION@!$(VERSION)!g" dblg.in.json >$@
+	@chmod 400 $@
 
 .js.min.js:
 	sed -e "s!@HTURI@!$(HTURI)!g" \
