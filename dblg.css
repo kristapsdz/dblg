@@ -20,6 +20,7 @@ body							{ margin: 0;
 							  left: 50%;
 							  max-width: 30em;
 							  width: 100%;
+							  -webkit-transform: translate(-50%, -50%); 
 							  transform: translate(-50%, -50%); }
 #loadingmsg						{ max-width: none;
 							  width: auto; }
@@ -36,7 +37,9 @@ a							{ text-decoration: none; }
 #show-entry:checked ~ #entry				{ opacity: 1; 
 							  max-height: 100em; }
 #loggedin nav						{ display: flex; 
+							  display: -webkit-flex;
 							  align-items: center;
+							  -webkit-align-items: center;
 							  background-color: #5a5a5a;
 							  max-width: none;
 							  padding-bottom: 8pt; 
@@ -47,7 +50,8 @@ a							{ text-decoration: none; }
 #submitform-geolocating					{ color: orange; }
 #submitform-ungeolocated				{ color: red; }
 #loggedin nav > * + *					{ margin-left: 8pt; }
-#loggedin nav > :nth-child(2)				{ flex: 1; }
+#loggedin nav > :nth-child(2)				{ flex: 1; 
+							  -webkit-flex: 1; }
 #loggedin > input ~ nav label				{ transition: color 0.2s ease-in-out;
 							  color: #aaa;
 							  padding: 0 2pt;
@@ -66,8 +70,10 @@ a							{ text-decoration: none; }
 							  margin-bottom: 0; }
 #submitform-existing 					{ padding-top: 0.5em; }
 #submitform-existing a					{ color: blue; }
-#mediaform-pair						{ display: flex; }
+#mediaform-pair						{ display: flex; 
+							  display: -webkit-flex; }
 #mediaform-pair > :first-child				{ flex: 1; 
+							  -webkit-flex: 1;
 							  margin-right: 4pt; }
 fieldset						{ border: none;
 							  margin: 1em 0;
@@ -153,7 +159,9 @@ label span						{ display: none; }
 #login > *						{ padding-left: 4pt;
 							  padding-right: 4pt; }
 footer							{ text-align: center; }
-#userlist > div						{ display: flex; }
+#userlist > div						{ display: flex; 
+							  display: -webkit-flex; }
 #userlist > div > :last-child				{ flex: 1; 
+							  -webkit-flex: 1; 
 							  text-align: right; }
 }
