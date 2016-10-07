@@ -350,7 +350,8 @@
 			return;
 
 		d = Math.floor(new Date().getTime() / 1000.0);
-		args = 'folder=' + u.cloud.path + '&timestamp=' + d;
+		args = 'folder=' + u.cloud.path + '&timestamp=' + d +
+			'&transformation=fl_force_strip';
 
 		sig = sha1(args + u.cloud.secret);
 
@@ -360,6 +361,7 @@
 		fd.append('folder', u.cloud.path);
 		fd.append('timestamp', d);
 		fd.append('signature', sig);
+		fd.append('transformation', 'fl_force_strip');
 		url = 'https://api.cloudinary.com/v1_1/' + 
 			u.cloud.name + '/upload';
 
