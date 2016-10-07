@@ -256,8 +256,15 @@
 				attr(cln, 'blog-canonlink', 'href',
 					options.blog + '?entryid=' + 
 					res.entries[i].id);
-			} else
+				showc(cln, 'blog-facebooklink');
+				attr(cln, 'blog-facebooklink', 
+					'data-href',
+					options.blog + '?entryid=' + 
+					res.entries[i].id);
+			} else {
 				hidec(cln, 'blog-canonlink');
+				hidec(cln, 'blog-facebooklink');
+			}
 
 			res.entries[i].html = null !== conv ?
 				conv.makeHtml(res.entries[i].content) :
