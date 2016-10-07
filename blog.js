@@ -261,6 +261,9 @@
 					'data-href',
 					options.blog + '?entryid=' + 
 					res.entries[i].id);
+				attr(cln, 'blog-facebooklink',
+					'data-numposts', 
+					(sz > 1 ? '2' : '20'));
 			} else {
 				hidec(cln, 'blog-canonlink');
 				hidec(cln, 'blog-facebooklink');
