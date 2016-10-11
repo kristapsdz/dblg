@@ -1227,8 +1227,6 @@ sendlogin(struct kreq *r)
 {
 	int64_t		 sid, cookie;
 	struct kpair	*kpi, *kpp;
-	time_t		 t;
-	struct tm	*tm;
 	char		 buf[64];
 	struct user	*u;
 	const char	*secure;
@@ -1254,9 +1252,9 @@ sendlogin(struct kreq *r)
 
 	cookie = arc4random();
 	sid = db_sess_new(r->arg, cookie, u);
-	t = time(NULL) + 60 * 60 * 24 * 365;
-	tm = gmtime(&t);
-	strftime(buf, sizeof(buf), "%a, %d %b %Y %T GMT", tm);
+	kutil_epoch2str
+		(time(NULL) + 60 * 60 * 24 * 365,
+		 buf, sizeof(buf));
 #ifdef SECURE
 	secure = " secure;";
 #else
