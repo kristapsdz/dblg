@@ -262,73 +262,6 @@ static const char *const pages[PAGE__MAX] = {
 	"submit", /* PAGE_SUBMIT */
 };
 
-/* Forward declaration for attributes. */
-
-static void lwarn(const char *, ...) 
-	__attribute__((format(printf, 1, 2)));
-static void lwarnx(const char *, ...) 
-	__attribute__((format(printf, 1, 2)));
-static void linfo(const char *, ...) 
-	__attribute__((format(printf, 1, 2)));
-
-static void
-linfo(const char *fmt, ...)
-{
-	va_list	 ap;
-	time_t	 t;
-	char	 buf[32];
-	size_t	 sz;
-
-	t = time(NULL);
-	ctime_r(&t, buf);
-	sz = strlen(buf);
-	buf[sz - 1] = '\0';
-	fprintf(stderr, "[%s] ", buf);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-}
-
-static void
-lwarn(const char *fmt, ...)
-{
-	va_list	 ap;
-	time_t	 t;
-	char	 buf[32];
-	size_t	 sz;
-	int	 er = errno;
-
-	t = time(NULL);
-	ctime_r(&t, buf);
-	sz = strlen(buf);
-	buf[sz - 1] = '\0';
-	fprintf(stderr, "[%s] WARNING: ", buf);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, ": %s\n", strerror(er));
-}
-
-static void
-lwarnx(const char *fmt, ...)
-{
-	va_list	 ap;
-	time_t	 t;
-	char	 buf[32];
-	size_t	 sz;
-
-	t = time(NULL);
-	ctime_r(&t, buf);
-	sz = strlen(buf);
-	buf[sz - 1] = '\0';
-	fprintf(stderr, "[%s] WARNING: ", buf);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fputc('\n', stderr);
-}
-
 static void
 sendhttphead(struct kreq *r, enum khttp code)
 {
@@ -457,14 +390,14 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 }
 
 static int64_t
-db_entry_modify(struct ksql *sql, const struct user *user, 
+db_entry_modify(struct kreq *r, const struct user *user, 
 	const char *title, const char *text, 
 	int64_t id, double lat, double lng, int save,
 	const char *lang)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_ENTRY_MODIFY], 
 		STMT_ENTRY_MODIFY);
 	ksql_bind_str(stmt, 0, text);
@@ -484,19 +417,19 @@ db_entry_modify(struct ksql *sql, const struct user *user,
 	ksql_bind_int(stmt, 8, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: modified entry: %" PRId64, user->email, id);
+	kutil_info(r, user->email, "modified entry: %" PRId64, id);
 	return(id);
 }
 
 static int64_t
-db_entry_new(struct ksql *sql, const struct user *user, 
+db_entry_new(struct kreq *r, const struct user *user, 
 	const char *title, const char *text, 
 	double lat, double lng, int save, const char *lang)
 {
 	struct ksqlstmt	*stmt;
 	int64_t		 id;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_ENTRY_NEW], 
 		STMT_ENTRY_NEW);
 	ksql_bind_str(stmt, 0, text);
@@ -514,8 +447,8 @@ db_entry_new(struct ksql *sql, const struct user *user,
 	bind_if_not_null(stmt, 6, lang);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	ksql_lastid(sql, &id);
-	linfo("%s: new entry: %" PRId64, user->email, id);
+	ksql_lastid(r->arg, &id);
+	kutil_info(r, user->email, "new entry: %" PRId64, id);
 	return(id);
 }
 
@@ -609,7 +542,7 @@ db_sess_del(struct ksql *sql, int64_t id, int64_t cookie)
 }
 
 static void
-db_user_mod_pass(struct ksql *sql, 
+db_user_mod_pass(struct kreq *r, 
 	const struct user *u, const char *pass)
 {
 	struct ksqlstmt	*stmt;
@@ -620,24 +553,24 @@ db_user_mod_pass(struct ksql *sql,
 #else
 	strlcpy(hash, pass, sizeof(hash));
 #endif
-	ksql_stmt_alloc(sql, &stmt,
+	ksql_stmt_alloc(r->arg, &stmt,
 		stmts[STMT_USER_MOD_HASH],
 		STMT_USER_MOD_HASH);
 	ksql_bind_str(stmt, 0, hash);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: changed password", u->email);
+	kutil_info(r, u->email, "changed password");
 }
 
 static int
-db_user_mod_email(struct ksql *sql, 
+db_user_mod_email(struct kreq *r, 
 	const struct user *u, const char *email)
 {
 	struct ksqlstmt	*stmt;
 	enum ksqlc	 c;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_MOD_EMAIL], 
 		STMT_USER_MOD_EMAIL);
 	ksql_bind_str(stmt, 0, email);
@@ -645,41 +578,40 @@ db_user_mod_email(struct ksql *sql,
 	c = ksql_stmt_cstep(stmt);
 	ksql_stmt_free(stmt);
 	if (KSQL_CONSTRAINT != c)
-		linfo("%s: changed email: %s", 
-			u->email, email);
+		kutil_info(r, u->email, "changed email: %s", email);
 	return(KSQL_CONSTRAINT != c);
 }
 
 static void
-db_user_mod_enable(struct ksql *sql, 
+db_user_mod_enable(struct kreq *r, 
 	const struct user *u, int64_t userid, int enable)
 {
 	struct ksqlstmt	*stmt;
 
 	if (enable)
-		ksql_stmt_alloc(sql, &stmt, 
+		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_USER_MOD_ENABLE], 
 			STMT_USER_MOD_ENABLE);
 	else
-		ksql_stmt_alloc(sql, &stmt, 
+		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_USER_MOD_DISABLE], 
 			STMT_USER_MOD_DISABLE);
 	ksql_bind_int(stmt, 0, USER_DISABLED);
 	ksql_bind_int(stmt, 1, userid);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: %s user: %" PRId64, u->email,
+	kutil_info(r, u->email, "%s user: %" PRId64, 
 		enable ? "enabled" : "disabled", userid);
 }
 
 static void
-db_user_mod_cloud(struct ksql *sql, const struct user *u, 
+db_user_mod_cloud(struct kreq *r, const struct user *u, 
 	const char *key, const char *secret,
 	const char *name, const char *path)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_MOD_CLOUD], 
 		STMT_USER_MOD_CLOUD);
 	bind_if_not_null(stmt, 0, key);
@@ -689,43 +621,43 @@ db_user_mod_cloud(struct ksql *sql, const struct user *u,
 	ksql_bind_int(stmt, 4, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: changed cloud parameters", u->email);
+	kutil_info(r, u->email, "changed cloud parameters");
 }
 
 static void
-db_user_mod_lang(struct ksql *sql, 
+db_user_mod_lang(struct kreq *r, 
 	const struct user *u, const char *lang)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_MOD_LANG], 
 		STMT_USER_MOD_LANG);
 	bind_if_not_null(stmt, 0, lang);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: changed lang", u->email);
+	kutil_info(r, u->email, "changed lang");
 }
 
 static void
-db_user_mod_link(struct ksql *sql, 
+db_user_mod_link(struct kreq *r, 
 	const struct user *u, const char *link)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_MOD_LINK], 
 		STMT_USER_MOD_LINK);
 	bind_if_not_null(stmt, 0, link);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: changed link", u->email);
+	kutil_info(r, u->email, "changed link");
 }
 
 static int
-db_user_add(struct ksql *sql, const struct user *u,
+db_user_add(struct kreq *r, const struct user *u,
 	const char *email, const char *pass, int admin)
 {
 	struct ksqlstmt	*stmt;
@@ -737,7 +669,7 @@ db_user_add(struct ksql *sql, const struct user *u,
 #else
 	strlcpy(hash, pass, sizeof(hash));
 #endif
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_ADD], 
 		STMT_USER_ADD);
 	ksql_bind_str(stmt, 0, "Anonymous user");
@@ -746,40 +678,40 @@ db_user_add(struct ksql *sql, const struct user *u,
 	ksql_bind_int(stmt, 3, admin ? 1 : 0);
 	c = ksql_stmt_cstep(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: added user: %s", u->email, email);
+	kutil_info(r, u->email, "added user: %s", email);
 	return(KSQL_CONSTRAINT != c);
 }
 
 static void
-db_user_mod_name(struct ksql *sql, 
+db_user_mod_name(struct kreq *r, 
 	const struct user *u, const char *name)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_USER_MOD_NAME], 
 		STMT_USER_MOD_NAME);
 	ksql_bind_str(stmt, 0, name);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: changed name", u->email);
+	kutil_info(r, u->email, "changed name");
 }
 
 static void
-db_entry_delete(struct ksql *sql, 
+db_entry_delete(struct kreq *r, 
 	const struct user *u, int64_t id)
 {
 	struct ksqlstmt	*stmt;
 
-	ksql_stmt_alloc(sql, &stmt, 
+	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_ENTRY_DELETE], 
 		STMT_ENTRY_DELETE);
 	ksql_bind_int(stmt, 0, id);
 	ksql_bind_int(stmt, 1, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	linfo("%s: deleted entry: %" PRId64, u->email, id);
+	kutil_info(r, u->email, "deleted entry: %" PRId64, id);
 }
 
 static void
@@ -914,13 +846,13 @@ sendsubmit(struct kreq *r, const struct user *u)
 
 	if (NULL != (kpi = r->fieldmap[KEY_ENTRYID]) &&
 	    kpi->parsed.i > 0)  
-		id = db_entry_modify(r->arg, u, 
+		id = db_entry_modify(r, u, 
 			NULL == kpt ? "" : kpt->parsed.s, 
 			NULL == kpm ? "" : kpm->parsed.s, 
 			kpi->parsed.i, lat, lng, save,
 			NULL != kpl ? kpl->parsed.s : "");
 	else
-		id = db_entry_new(r->arg, u, 
+		id = db_entry_new(r, u, 
 			NULL == kpt ? "" : kpt->parsed.s, 
 			NULL == kpm ? "" : kpm->parsed.s, 
 			lat, lng, save,
@@ -940,8 +872,7 @@ sendmodlang(struct kreq *r, const struct user *u)
 	struct kpair	*kp;
 
 	kp = r->fieldmap[KEY_LANG];
-	db_user_mod_lang(r->arg, u, 
-		NULL != kp ? kp->parsed.s : "");
+	db_user_mod_lang(r, u, NULL != kp ? kp->parsed.s : "");
 	sendhttp(r, KHTTP_200);
 }
 
@@ -951,8 +882,7 @@ sendmodlink(struct kreq *r, const struct user *u)
 	struct kpair	*kp;
 
 	kp = r->fieldmap[KEY_LINK];
-	db_user_mod_link(r->arg, u, 
-		NULL != kp ? kp->parsed.s : "");
+	db_user_mod_link(r, u, NULL != kp ? kp->parsed.s : "");
 	sendhttp(r, KHTTP_200);
 }
 
@@ -965,7 +895,7 @@ sendmodcloud(struct kreq *r, const struct user *u)
 	    NULL != (kps = r->fieldmap[KEY_CLOUDSECRET]) &&
 	    NULL != (kpn = r->fieldmap[KEY_CLOUDNAME]) &&
 	    NULL != (kpp = r->fieldmap[KEY_CLOUDPATH])) {
-		db_user_mod_cloud(r->arg, u, 
+		db_user_mod_cloud(r, u, 
 			kpk->parsed.s, kps->parsed.s,
 			kpn->parsed.s, kpp->parsed.s);
 		sendhttp(r, KHTTP_200);
@@ -981,7 +911,7 @@ sendmodenable(struct kreq *r, const struct user *u)
 	if (NULL != (kpe = r->fieldmap[KEY_USERID]) &&
 	    NULL != (kpn = r->fieldmap[KEY_ENABLE]) &&
 	    u->id != kpe->parsed.i) {
-		db_user_mod_enable(r->arg, u,
+		db_user_mod_enable(r, u,
 			kpe->parsed.i, 
 			kpn->parsed.i ? 1 : 0);
 		sendhttp(r, KHTTP_200);
@@ -996,7 +926,7 @@ sendmodemail(struct kreq *r, const struct user *u)
 	int		 rc;
 
 	if (NULL != (kp = r->fieldmap[KEY_EMAIL])) {
-		rc = db_user_mod_email(r->arg, u, kp->parsed.s);
+		rc = db_user_mod_email(r, u, kp->parsed.s);
 		sendhttp(r, rc ? KHTTP_200 : KHTTP_400);
 	} else
 		sendhttp(r, KHTTP_400);
@@ -1009,7 +939,7 @@ sendmodpass(struct kreq *r, const struct user *u)
 
 	if (NULL != (kp = r->fieldmap[KEY_PASS])) {
 		sendhttp(r, KHTTP_200);
-		db_user_mod_pass(r->arg, u, kp->parsed.s);
+		db_user_mod_pass(r, u, kp->parsed.s);
 	} else
 		sendhttp(r, KHTTP_400);
 }
@@ -1021,7 +951,7 @@ sendmodname(struct kreq *r, const struct user *u)
 
 	if (NULL != (kp = r->fieldmap[KEY_NAME])) {
 		sendhttp(r, KHTTP_200);
-		db_user_mod_name(r->arg, u, kp->parsed.s);
+		db_user_mod_name(r, u, kp->parsed.s);
 	} else 
 		sendhttp(r, KHTTP_400);
 }
@@ -1039,11 +969,9 @@ sendadduser(struct kreq *r, const struct user *u)
 	rc = 0;
 	if (NULL != (kpe = r->fieldmap[KEY_EMAIL]) &&
 	    NULL != (kpp = r->fieldmap[KEY_PASS]))
-		rc = db_user_add(r->arg, u, kpe->parsed.s, 
+		rc = db_user_add(r, u, kpe->parsed.s, 
 			kpp->parsed.s, NULL != kpa);
 	sendhttp(r, rc ? KHTTP_200 : KHTTP_400);
-	if (rc) 
-		linfo("%s: added user", kpe->parsed.s);
 }
 
 static void
@@ -1244,8 +1172,8 @@ sendlogin(struct kreq *r)
 		sendhttp(r, KHTTP_400);
 		return;
 	} else if (USER_DISABLED & u->flags) {
-		linfo("%s: tried logging in when "
-			"disabled", u->email);
+		kutil_info(r, u->email, 
+			"logging in when disabled");
 		sendhttp(r, KHTTP_400);
 		return;
 	}
@@ -1308,8 +1236,7 @@ main(void)
 
 	/* Log into a separate logfile (not system log). */
 
-	freopen(LOGFILE, "a", stderr);
-	setlinebuf(stderr);
+	kutil_openlog(LOGFILE);
 
 	/* Configure normal database except with foreign keys. */
 
@@ -1326,14 +1253,13 @@ main(void)
 		pages, PAGE__MAX, PAGE_INDEX);
 
 	if (KCGI_OK != er) {
-		lwarnx("HTTP parse error: %d", er);
-		khttp_free(&r);
+		fprintf(stderr, "HTTP parse error: %d\n", er);
 		return(EXIT_FAILURE);
 	}
 
 #ifdef	__OpenBSD__
 	if (-1 == pledge("stdio rpath cpath wpath flock fattr", NULL)) {
-		lwarn("pledge");
+		kutil_warn(&r, NULL, "pledge");
 		khttp_free(&r);
 		return(EXIT_FAILURE);
 	}
@@ -1401,8 +1327,8 @@ main(void)
 
 	if (PAGE_LOGIN != r.page && NULL != u && 
 	    USER_DISABLED & u->flags) {
-		linfo("%s: tried using site "
-			"when disabled", u->email);
+		kutil_info(&r, u->email,  
+			"using site when disabled");
 		sendhttp(&r, KHTTP_404);
 		khttp_free(&r);
 		ksql_free(sql);
