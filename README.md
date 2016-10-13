@@ -52,6 +52,8 @@ Some features:
 - Supports language tags.
 - Responsive layout for small displays.
 - Strong HTTP caching with etags, full compression support.
+- Security: cookies with security extensions and full support for CSP
+  (no in-line JavaScript)
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
 formatting dates, [SimpleMDE](https://simplemde.com/) for editing
