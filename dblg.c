@@ -1191,10 +1191,10 @@ sendlogin(struct kreq *r)
 	khttp_head(r, kresps[KRESP_STATUS], 
 		"%s", khttps[KHTTP_200]);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
-		"%s=%" PRId64 ";%s path=/; expires=%s", 
+		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		keys[KEY_SESSCOOKIE].name, cookie, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
-		"%s=%" PRId64 ";%s path=/; expires=%s", 
+		"%s=%" PRId64 ";%s HttpOnly; path=/; expires=%s", 
 		keys[KEY_SESSID].name, sid, secure, buf);
 	khttp_body(r);
 
@@ -1205,7 +1205,9 @@ static void
 sendlogout(struct kreq *r)
 {
 	const char	*secure;
+	char		 buf[32];
 
+	kutil_epoch2str(0, buf, sizeof(buf));
 #ifdef SECURE
 	secure = " secure;";
 #else
@@ -1214,11 +1216,11 @@ sendlogout(struct kreq *r)
 
 	sendhttphead(r, KHTTP_200);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
-		"%s=; path=/;%s expires=", 
-		keys[KEY_SESSCOOKIE].name, secure);
+		"%s=; path=/;%s HttpOnly; expires=%s", 
+		keys[KEY_SESSCOOKIE].name, secure, buf);
 	khttp_head(r, kresps[KRESP_SET_COOKIE],
-		"%s=; path=/;%s expires=", 
-		keys[KEY_SESSID].name, secure);
+		"%s=; path=/;%s HttpOnly; expires=%s", 
+		keys[KEY_SESSID].name, secure, buf);
 	khttp_body(r);
 	db_sess_del(r->arg, 
 		r->cookiemap[KEY_SESSID]->parsed.i, 
