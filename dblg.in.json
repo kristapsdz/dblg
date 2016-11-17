@@ -56,14 +56,14 @@
 				"parameters": [
 					{
 						"name": "email",
-						"in": "query",
+						"in": "form",
 						"description": "User identifier (e-mail)",
 						"type": "string",
 						"required": true
 					},
 					{
 						"name": "password",
-						"in": "query",
+						"in": "form",
 						"description": "User password",
 						"type": "password",
 						"required": true
@@ -91,6 +91,80 @@
 								"description": "Key-value pairs for the authentication identifier and cookie",
 								"type": "string"
 							}
+						}
+					}
+				}
+			}
+		},
+		"/public.json": {
+			"get": {
+				"description": "Public (non-authenticated) access to blog contents",
+				"parameters": [
+					{
+						"name": "lang",
+						"in": "query",
+						"description": "Language filter",
+						"type": "string",
+						"required": false
+					},
+					{
+						"name": "limit",
+						"in": "query",
+						"description": "Limit number of entries",
+						"type": "integer",
+						"format": "int64",
+						"required": false
+					},
+					{
+						"name": "entryid",
+						"in": "query",
+						"description": "Specific entry identifier",
+						"type": "integer",
+						"format": "int64",
+						"required": false
+					},
+					{
+						"name": "sessid",
+						"in": "cookie",
+						"description": "Session identifier",
+						"type": "integer",
+						"format": "int64",
+						"required": false
+					},
+					{
+						"name": "sesscookie",
+						"in": "cookie",
+						"description": "Session cookie",
+						"type": "integer",
+						"format": "int64",
+						"required": false
+					}
+				],
+				"produces": [ "application/json" ],
+				"responses": {
+					"403": {
+						"description": "If credentials are provided, session invalid or user disabled",
+						"schema": {
+							"type": "object",
+							"properties": { }
+						}
+					},
+					"200": {
+						"description": "User (if applicable) and blog entries",
+						"schema": {
+							"type": "object",
+							"properties": {
+								"user": {
+									"description": "Currently logged-in user (if applicable, else null)",
+									"$ref": "#/definitions/user"
+								},
+								"entries": {
+									"description": "All entries matching the filters",
+									"type": "array",
+									"items": { "$ref": "#/definitions/entry" }
+								}
+							},
+							"required": [ "user", "entries" ]
 						}
 					}
 				}
