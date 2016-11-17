@@ -213,6 +213,10 @@
 					"description": "Content (may be zero length only if not yet published)",
 					"type": "string"
 				},
+				"aside": {
+					"description": "Article aside (may be zero length)",
+					"type": "string"
+				},
 				"id": {
 					"description": "Unique identifier",
 					"type": "integer"

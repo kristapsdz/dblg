@@ -782,6 +782,7 @@ json_putentry(struct kjsonreq *req, const struct user *u,
 	kjson_putintp(req, "mtime", entry->mtime);
 	kjson_putintp(req, "id", entry->id);
 	kjson_putstringp(req, "content", entry->content);
+	json_if_not_null(req, "aside", entry->aside);
 	kjson_putstringp(req, "title", entry->title);
 	if (entry->coords) {
 		kjson_objp_open(req, "coords");
