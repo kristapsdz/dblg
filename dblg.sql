@@ -23,6 +23,9 @@ CREATE TABLE entry (
 	mtime INTEGER NOT NULL DEFAULT(strftime('%s', 'now')),
 	-- 1 if currently being edited (and thus not to be shown).
 	flags INTEGER NOT NULL DEFAULT(0),
+	-- An aside is a short bit of markdown describing the entry.
+	-- It can be NULL.
+	aside TEXT,
 	-- Unique identifier.
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	FOREIGN KEY(userid) REFERENCES user(id)

@@ -51,6 +51,7 @@ struct	user {
 };
 
 struct	entry {
+	char		*aside; /* non-binary aside (or NULL) */
 	char		*content; /* non-binary content */
 	char		*title; /* non-binary title */
 	char		*lang; /* IETF language (or NULL) */
@@ -84,6 +85,7 @@ enum	page {
 
 enum	key {
 	KEY_ADMIN,
+	KEY_ASIDE,
 	KEY_CLOUDKEY,
 	KEY_CLOUDNAME,
 	KEY_CLOUDPATH,
@@ -141,7 +143,7 @@ enum	stmt {
 		"user.cloudpath,user.flags,user.lang"
 #define	ENTRY	"entry.contents,entry.ctime,entry.id,entry.title," \
 		"entry.latitude,entry.longitude,entry.mtime," \
-		"entry.flags,entry.lang"
+		"entry.flags,entry.lang,entry.aside"
 
 static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_DELETE */
@@ -223,6 +225,7 @@ static	const char *const stmts[STMT__MAX] = {
 
 static const struct kvalid keys[KEY__MAX] = {
 	{ NULL, "admin" }, /* KEY_ADMIN */
+	{ kvalid_string, "aside" }, /* KEY_ASIDE */
 	{ kvalid_string, "cloudkey" }, /* KEY_CLOUDKEY */
 	{ kvalid_string, "cloudname" }, /* KEY_CLOUDNAME */
 	{ kvalid_string, "cloudpath" }, /* KEY_CLOUDPATH */
@@ -359,6 +362,7 @@ db_entry_unfill(struct entry *p)
 
 	if (NULL == p)
 		return;
+	free(p->aside);
 	free(p->content);
 	free(p->title);
 	free(p->lang);
@@ -387,6 +391,7 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 	p->mtime = ksql_stmt_int(stmt, (*pos)++);
 	p->flags = ksql_stmt_int(stmt, (*pos)++);
 	col_if_not_null(&p->lang, stmt, (*pos)++);
+	col_if_not_null(&p->aside, stmt, (*pos)++);
 }
 
 static int64_t
