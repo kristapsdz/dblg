@@ -182,11 +182,12 @@ static	const char *const stmts[STMT__MAX] = {
 		"ORDER BY entry.mtime DESC LIMIT ?",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
-		"longitude=?,mtime=?,flags=?,lang=? "
+		"longitude=?,mtime=?,flags=?,lang=?,aside=? "
 		"WHERE userid=? AND id=?",
 	/* STMT_ENTRY_NEW */
 	"INSERT INTO entry (contents,title,userid,latitude,"
-		"longitude,flags,lang) VALUES (?,?,?,?,?,?,?)",
+		"longitude,flags,lang,aside) "
+		"VALUES (?,?,?,?,?,?,?,?)",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -398,7 +399,7 @@ static int64_t
 db_entry_modify(struct kreq *r, const struct user *user, 
 	const char *title, const char *text, 
 	int64_t id, double lat, double lng, int save,
-	const char *lang)
+	const char *lang, const char *aside)
 {
 	struct ksqlstmt	*stmt;
 
@@ -418,8 +419,9 @@ db_entry_modify(struct kreq *r, const struct user *user,
 	ksql_bind_int(stmt, 4, time(NULL));
 	ksql_bind_int(stmt, 5, save ? 1 : 0);
 	bind_if_not_null(stmt, 6, lang);
-	ksql_bind_int(stmt, 7, user->id);
-	ksql_bind_int(stmt, 8, id);
+	bind_if_not_null(stmt, 7, aside);
+	ksql_bind_int(stmt, 8, user->id);
+	ksql_bind_int(stmt, 9, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	kutil_info(r, user->email, "modified entry: %" PRId64, id);
@@ -429,7 +431,8 @@ db_entry_modify(struct kreq *r, const struct user *user,
 static int64_t
 db_entry_new(struct kreq *r, const struct user *user, 
 	const char *title, const char *text, 
-	double lat, double lng, int save, const char *lang)
+	double lat, double lng, int save, const char *lang,
+	const char *aside)
 {
 	struct ksqlstmt	*stmt;
 	int64_t		 id;
@@ -450,6 +453,7 @@ db_entry_new(struct kreq *r, const struct user *user,
 	}
 	ksql_bind_int(stmt, 5, save ? 1 : 0);
 	bind_if_not_null(stmt, 6, lang);
+	bind_if_not_null(stmt, 7, aside);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	ksql_lastid(r->arg, &id);
@@ -818,7 +822,8 @@ sendremove(struct kreq *r, const struct user *u)
 static void
 sendsubmit(struct kreq *r, const struct user *u)
 {
-	struct kpair	*kpm, *kpt, *kpi, *kplat, *kplng, *kpl;
+	struct kpair	*kpm, *kpt, *kpi, *kplat, *kplng, *kpl,
+			*kpa;
 	int64_t		 id;
 	struct kjsonreq	 req;
 	double		 lat, lng;
@@ -829,6 +834,7 @@ sendsubmit(struct kreq *r, const struct user *u)
 	save = NULL != r->fieldmap[KEY_SAVE];
 	assert(NULL != u);
 
+	kpa = r->fieldmap[KEY_ASIDE];
 	kpm = r->fieldmap[KEY_MARKDOWN];
 	kpt = r->fieldmap[KEY_TITLE];
     	kplat = r->fieldmap[KEY_LATITUDE];
@@ -856,13 +862,15 @@ sendsubmit(struct kreq *r, const struct user *u)
 			NULL == kpt ? "" : kpt->parsed.s, 
 			NULL == kpm ? "" : kpm->parsed.s, 
 			kpi->parsed.i, lat, lng, save,
-			NULL != kpl ? kpl->parsed.s : "");
+			NULL != kpl ? kpl->parsed.s : "",
+			NULL != kpa ? kpa->parsed.s : "");
 	else
 		id = db_entry_new(r, u, 
 			NULL == kpt ? "" : kpt->parsed.s, 
 			NULL == kpm ? "" : kpm->parsed.s, 
 			lat, lng, save,
-			NULL != kpl ? kpl->parsed.s : "");
+			NULL != kpl ? kpl->parsed.s : "",
+			NULL != kpa ? kpa->parsed.s : "");
 
 	sendhttp(r, KHTTP_200);
 	kjson_open(&req, r);
