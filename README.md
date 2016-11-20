@@ -93,6 +93,11 @@ Once configured, run `make installcgi` for first-time to install the
 database and the CGI script; else, `make updatecgi` only to freshen the
 CGI script and not touch the database.
 
+If you're upgrading from an old version of dblg (i.e., with `make
+updatecgi` and differnt versions), the database may have changed.  Each
+version with a changing upgrade has a database upgrade script as
+dblg-OLD-NEW.sql.  Run those in order.
+
 To install the editor tools, use `make installserver`.  This will only
 install the HTML, JavaScript, and CSS for the editor.
 

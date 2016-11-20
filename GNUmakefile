@@ -83,7 +83,7 @@ CSSS	 = dblg.css blog.css
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
 CFLAGS	+= -DLOGFILE=\"$(LOGFILE)\"
 CFLAGS	+= -DDATADIR=\"$(RDDIR)\"
-VERSION	 = 0.0.1
+VERSION	 = 0.0.2
 
 all: dblg dblg.db $(HTMLS) $(JSMINS) $(CSSS)
 
