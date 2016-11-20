@@ -1,4 +1,4 @@
-/*	$Id$ */
+/* 	$Id$ */
 /*
  * Copyright (c) 2016 Kristaps Dzonsons <kristaps@bsd.lv>
  *
@@ -16,9 +16,6 @@
  */
 (function(root) {
 	'use strict';
-
-	/* Markdown editor object. */
-	var mde = null;
 
 	/*
 	 * Post a FormData object ("fd") to the given "url" with
@@ -211,6 +208,19 @@
 			e.classList.remove('hide');
 
 		return(e);
+	}
+
+	function replhtml(key, html)
+	{
+		var e;
+
+		e = (typeof key === 'string' || 
+		     key instanceof String) ? find(key) : key;
+		if (null === e)
+			return;
+		while (e.firstChild)
+			e.removeChild(e.firstChild);
+		e.innerHTML = html;
 	}
 
 	/*
@@ -504,7 +514,8 @@
 			return;
 		}
 
-		mde.value(entry.content);
+		repl('submitform-synopsis', entry.aside);
+		repl('submitform-content', entry.content);
 		attr('submitform-title', 'value', entry.title);
 		attr('submitform-entryid', 'value', entry.id);
 		show('submitform-existing');
@@ -607,19 +618,6 @@
 		else
 			hide('label-admin');
 
-		if (null !== mde) {
-			mde.value('');
-			mde.toTextArea();
-			mde = null;
-		}
-
-		mde = new SimpleMDE({
-			insertTexts: { 
-				link: ["[", "]()"], 
-				image: ["![](", ")"] 
-			}
-		});
-		
 		show('submitform-geolocating');
 		hide('submitform-geolocated');
 		hide('submitform-ungeolocated');
@@ -657,6 +655,29 @@
 		pendingInit(res.pending);
 	}
 
+	function toggleeditor()
+	{
+		var e = find('submitform-edit'), conv;
+
+		e.checked = ! e.checked;
+		if (e.checked)
+			return;
+
+		repl('submitform-preview-title',
+			find('submitform-title').value);
+
+		conv = new showdown.Converter();
+
+		replhtml('submitform-preview-synopsis',
+			null !== conv ? 
+			conv.makeHtml(find('submitform-synopsis').value) : 
+			'');
+		replhtml('submitform-preview-content',
+			null !== conv ? 
+			conv.makeHtml(find('submitform-content').value) : 
+			'');
+	}
+
 	function blogeditor()
 	{
 		var i, list, env, qs, url;
@@ -676,6 +697,8 @@
 		find('submitform').onsubmit = submit;
 		find('submitform-save').onclick = save;
 		find('logout').onclick = logout;
+		find('submitform-previewbtn').onclick = toggleeditor;
+		find('submitform-editbtn').onclick = toggleeditor;
 
 		url = '@REPURI@';
 		if (url.length) {
@@ -834,7 +857,6 @@
 	{
 		var fd;
 
-		find('submitform-markdowninput').value = mde.value();
 		fd = new FormData(find('submitform'));
 		fd.append('save', '1');
 		return(sendPost(find('submitform').action, fd, saveSetup, 
@@ -846,7 +868,6 @@
 	 */
 	function submit()
 	{
-		find('submitform-markdowninput').value = mde.value();
 		/*
 		 * XXX: this can be out of sync since
 		 * 'submitform-nocoords' is set by an asynchronous

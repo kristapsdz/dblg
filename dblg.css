@@ -46,6 +46,7 @@ a							{ text-decoration: none; }
 							  padding-top: 8pt; }
 #loggedin nav .icony					{ transition: color 0.5s ease-in-out; }
 #loggedin nav a						{ color: #fff; }
+#submitform > input[type=checkbox]			{ display: none; }
 #submitform-geolocated					{ color: lightgreen; }
 #submitform-geolocating					{ color: orange; }
 #submitform-ungeolocated				{ color: red; }
@@ -65,9 +66,6 @@ a							{ text-decoration: none; }
 #show-entry:checked ~ nav #label-entry			{ color: #fff; }
 #usermod form + form					{ margin-top: 4pt; }
 #entry > div						{ padding-bottom: 0.5em; }
-#contentform						{ padding-bottom: 0; 
-							  margin-top: 1em;
-							  margin-bottom: 0; }
 #submitform-existing 					{ padding-top: 0.5em; }
 #submitform-existing a					{ color: blue; }
 #mediaform-pair						{ display: flex; 
@@ -75,12 +73,15 @@ a							{ text-decoration: none; }
 #mediaform-pair > :first-child				{ flex: 1; 
 							  -webkit-flex: 1;
 							  margin-right: 4pt; }
+#markdown-preview					{ color: blue;
+							  opacity: 1.0; }
+.preview > div + div					{ margin-top: 1em; }
+.preview,
 fieldset						{ border: none;
 							  margin: 1em 0;
 							  padding: 0; }
-fieldset + .buttons					{ margin-top: -0.5em; 
-							  margin-bottom: 1em; }
-label.formlabel, fieldset label				{ color: #888; 
+fieldset + .buttons					{ margin-bottom: 1em; }
+fieldset label						{ color: #888; 
 						   	  display: block; 
 						 	  margin-bottom: 1pt; }
 fieldset select, 
@@ -100,6 +101,8 @@ fieldset > * + *					{ margin-top: 0.5em; }
 fieldset select, 
 fieldset input, 
 fieldset textarea					{ border: 1px solid black; }
+fieldset textarea					{ height: 400px; }
+fieldset textarea.short					{ height: 100px; }
 button							{ color: rgba(0, 0, 0, 0.8);
 							  border: 0px none transparent;
 							  background-color: #D6D6D6;
@@ -140,6 +143,24 @@ footer a:hover						{ color: #444; }
 #userlist .userlist-enabled				{ color: #333; }
 #userlist .userlist-disabled				{ color: #888; }
 #userlist > div > * + *					{ margin-left: 6pt; }
+#submitform #submitform-preview-content,
+#submitform #submitform-preview-synopsis,
+#submitform #submitform-preview-title			{ background-color: #efefef; 
+							  padding: 2pt 4pt; }
+#submitform .preview label				{ font-size: 11pt;
+							  color: #666; }
+#submitform > #submitform-edit ~ .preview		{ display: block; }
+#submitform > #submitform-edit ~ fieldset		{ display: none; }
+#submitform > #submitform-edit ~ .buttons #submitform-editbtn		
+							{ display: inline; }
+#submitform > #submitform-edit ~ .buttons #submitform-previewbtn		
+							{ display: none; }
+#submitform > #submitform-edit:checked ~ .preview	{ display: none; }
+#submitform > #submitform-edit:checked ~ fieldset	{ display: block; }
+#submitform > #submitform-edit:checked ~ .buttons #submitform-editbtn		
+							{ display: none; }
+#submitform > #submitform-edit:checked ~ .buttons #submitform-previewbtn		
+							{ display: inline; }
 
 @media only screen and (max-width: 768px), only screen and (max-device-width: 768px) {
 #loggedin nav						{ text-align: left; 

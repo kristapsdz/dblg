@@ -5,12 +5,11 @@
 		<meta charset="utf-8" /> 
 		<title>dblg :: blogging interface</title>
 		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
-		<link rel="stylesheet" href="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
 		<link rel="stylesheet" href="@HTURI@/dblg.css" />
 		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
-		<script src="//cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
 		<script src="//cdn.jsdelivr.net/clipboard.js/1.5.12/clipboard.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/js-sha1/0.3.0/sha1.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.4.3/showdown.min.js"></script>
 		<script src="@HTURI@/dblg.min.js"></script>
 	</head>
 	<body>
@@ -325,19 +324,17 @@
 				</div>
 				<div id="entry">
 					<div id="submitform-existing">
-						<p>
-							<strong>
-								<i class="fa fa-exclamation-triangle"></i>
-								You are editing an existing 
-								(<span
-									id="submitform-existing-published">published</span><span
-									id="submitform-existing-unpublished">unpublished</span>)
-								blog entry created
-								<span id="submitform-existing-ctime"></span>.
-							</strong>
-							<a href="@HTURI@/dblg.html">Reset</a> to start a new entry or
-							<a id="submitform-remove" href="#">delete</a> the current entry.
-						</p>
+						<strong>
+							<i class="fa fa-exclamation-triangle"></i>
+							You are editing an existing 
+							(<span
+								id="submitform-existing-published">published</span><span
+								id="submitform-existing-unpublished">unpublished</span>)
+							blog entry created
+							<span id="submitform-existing-ctime"></span>.
+						</strong>
+						<a href="@HTURI@/dblg.html">Reset</a> to start a new entry or
+						<a id="submitform-remove" href="#">delete</a> the current entry.
 					</div>
 					<div id="mediaform">
 						<fieldset>
@@ -354,12 +351,6 @@
 								</div>
 							</div>
 						</fieldset>
-						<div class="buttons">
-						</div>
-					</div>
-					<div id="contentform">
-						<label class="formlabel">Contents</label>
-						<textarea id="markdown"></textarea>
 					</div>
 					<form id="submitform" method="post" action="@CGIURI@/submit.json">
 						<div class="error error400 hide">
@@ -369,19 +360,42 @@
 						<input type="hidden" name="markdown" id="submitform-markdowninput" />
 						<input type="hidden" name="latitude" id="submitform-latitude" disabled="disabled" />
 						<input type="hidden" name="longitude" id="submitform-longitude" disabled="disabled" />
+						<input type="checkbox" name="view" id="submitform-edit" checked="checked" />
+						<div class="preview">
+							<div>
+								<label>Title</label>
+								<div id="submitform-preview-title"></div>
+							</div>
+							<div>
+								<label>Synopsis</label>
+								<div id="submitform-preview-synopsis"></div>
+							</div>
+							<div>
+								<label>Contents</label>
+								<div id="submitform-preview-content"></div>
+							</div>
+						</div>
 						<fieldset>
 							<div>
 								<label for="submitform-title">Title</label>
 								<div><input id="submitform-title" type="text" name="title" required="required" /></div>
 							</div>
 							<div>
-								<label for="submitform-nocoords">
-									<input type="checkbox" id="submitform-nocoords" /> Hide location
-								</label>
+								<label>Synopsis</label>
+								<div><textarea class="short" name="aside" id="submitform-synopsis"></textarea></div>
+							</div>
+							<div>
+								<label>Contents</label>
+								<div><textarea required="required" name="markdown" id="submitform-content"></textarea></div>
 							</div>
 							<div>
 								<label for="submitform-lang">Language</label>
 								<div><input id="submitform-lang" type="text" name="lang" /></div>
+							</div>
+							<div>
+								<label for="submitform-nocoords">
+									<input type="checkbox" id="submitform-nocoords" /> Hide location
+								</label>
 							</div>
 						</fieldset>
 						<div class="buttons">
@@ -400,6 +414,14 @@
 							<button type="button" disabled="disabled" class="hide saving">
 								<i class="fa fa-pulse fa-spinner"></i>
 								<span>Publishing...</span>
+							</button>
+							<button type="button" id="submitform-previewbtn">
+								<i class="fa fa-eye"></i>
+								Preview
+							</button>
+							<button type="button" id="submitform-editbtn">
+								<i class="fa fa-edit"></i>
+								Edit
 							</button>
 							<button type="button" id="submitform-cancel">
 								Cancel
