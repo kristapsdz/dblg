@@ -80,7 +80,6 @@ a							{ text-decoration: none; }
 fieldset						{ border: none;
 							  margin: 1em 0;
 							  padding: 0; }
-fieldset + .buttons					{ margin-bottom: 1em; }
 fieldset label						{ color: #888; 
 						   	  display: block; 
 						 	  margin-bottom: 1pt; }
@@ -161,6 +160,7 @@ footer a:hover						{ color: #444; }
 							{ display: none; }
 #submitform > #submitform-edit:checked ~ .buttons #submitform-previewbtn		
 							{ display: inline; }
+#modcloudform > .buttons				{ margin-bottom: 6pt; }
 
 @media only screen and (max-width: 768px), only screen and (max-device-width: 768px) {
 #loggedin nav						{ text-align: left; 
