@@ -56,9 +56,8 @@ Some features:
   (no in-line JavaScript)
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
-formatting dates, [SimpleMDE](https://simplemde.com/) for editing
-MarkDown, [clipboard.js](https://clipboardjs.com/) for copying to the
-clipboard (apparently this is hard?), and
+formatting dates, [clipboard.js](https://clipboardjs.com/) for copying
+to the clipboard (apparently this is hard?), and
 [js-sha1](https://github.com/emn178/js-sha1) for SHA1 hashing the cloud
 authorisation.
 
