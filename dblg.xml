@@ -381,11 +381,11 @@
 								<div><input id="submitform-title" type="text" name="title" required="required" /></div>
 							</div>
 							<div>
-								<label>Synopsis</label>
+								<label>Synopsis (<a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">Markdown</a>)</label>
 								<div><textarea class="short" name="aside" id="submitform-synopsis"></textarea></div>
 							</div>
 							<div>
-								<label>Contents</label>
+								<label>Contents (<a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">Markdown</a>)</label>
 								<div><textarea required="required" name="markdown" id="submitform-content"></textarea></div>
 							</div>
 							<div>
