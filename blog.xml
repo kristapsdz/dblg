@@ -32,7 +32,7 @@
 		</style>
 	</head>
 	<body>
-		<section id="blog">
+		<section id="blog" class="hide">
 			<article>
 				<div class="blog-control">
 					Owner control:

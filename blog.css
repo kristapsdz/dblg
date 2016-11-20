@@ -33,7 +33,7 @@
 					  border-radius: 1pt;
 					  padding: 0 4pt; }
 #blog .blog-delete-commit > *		{ padding: 0 1pt; }
-#blog .hide				{ display: none; }
+#blog.hide, #blog .hide			{ display: none; }
 #blog a					{ text-decoration: none; }
 
 @media only screen and (max-width: 767px), only screen and (max-device-width: 767px) {
