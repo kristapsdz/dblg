@@ -270,11 +270,11 @@
 					"properties": {
 						"lng": {
 							"description": "Longitude in decimal degrees",
-							"type": "double"
+							"type": "number"
 						},
 						"lat": {
 							"description": "Latitude in decimal degrees",
-							"type": "double"
+							"type": "number"
 						}
 					},
 					"required": [ "lat", "lng" ]
