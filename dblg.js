@@ -483,7 +483,16 @@
 			attr('user-input-cloudsecret', 'value', '');
 			attr('user-input-cloudpath', 'value', '');
 			attr('user-input-cloudname', 'value', '');
+			hide('user-input-cloud-set');
+			show('user-input-cloud-notset');
 			return;
+		}
+		if (cloud.set) {
+			show('user-input-cloud-set');
+			hide('user-input-cloud-notset');
+		} else {
+			hide('user-input-cloud-set');
+			show('user-input-cloud-notset');
 		}
 		attr('user-input-cloudkey', 'value', cloud.key);
 		attr('user-input-cloudsecret', 'value', cloud.secret);

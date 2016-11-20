@@ -626,7 +626,7 @@ db_user_mod_cloud(struct kreq *r, const struct user *u,
 	bind_if_not_null(stmt, 0, key);
 	bind_if_not_null(stmt, 1, secret);
 	bind_if_not_null(stmt, 2, name);
-	bind_if_not_null(stmt, 3, path);
+	ksql_bind_str(stmt, 3, path);
 	ksql_bind_int(stmt, 4, u->id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);

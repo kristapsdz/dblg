@@ -320,6 +320,14 @@
 								Changing...
 							</button>
 						</div>
+						<div id="user-input-cloud-notset">
+							<i class="fa fa-square-o"></i>
+							Cloud information is <i>not</i> set (needs all values).
+						</div>
+						<div id="user-input-cloud-set">
+							<i class="fa fa-check-square-o"></i>
+							Cloud information is set.
+						</div>
 					</form>
 				</div>
 				<div id="entry">
