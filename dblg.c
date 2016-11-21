@@ -119,6 +119,10 @@ enum	stmt {
 	STMT_ENTRY_LIST_PUBLIC_LANG,
 	STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT,
 	STMT_ENTRY_LIST_PUBLIC_LIMIT,
+	STMT_ENTRY_LIST_PUBLIC_MTIME,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
 	STMT_SESS_DEL,
@@ -145,6 +149,11 @@ enum	stmt {
 #define	ENTRY	"entry.contents,entry.ctime,entry.id,entry.title," \
 		"entry.latitude,entry.longitude,entry.mtime," \
 		"entry.flags,entry.lang,entry.aside"
+/* Convenience. */
+#define USER_ENTRY \
+		"SELECT " USER "," ENTRY " FROM entry " \
+		"INNER JOIN user ON user.id=entry.userid " \
+		"WHERE entry.flags=0 "
 
 static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_DELETE */
@@ -162,25 +171,25 @@ static	const char *const stmts[STMT__MAX] = {
 		"WHERE entry.flags=1 AND entry.userid=? "
 		"ORDER BY entry.mtime DESC",
 	/* STMT_ENTRY_LIST_PUBLIC */
-	"SELECT " USER "," ENTRY " FROM entry "
-		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE entry.flags=0 "
-		"ORDER BY ? DESC",
+	USER_ENTRY "ORDER BY entry.ctime DESC",
 	/* STMT_ENTRY_LIST_PUBLIC_LANG */
-	"SELECT " USER "," ENTRY " FROM entry "
-		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE entry.flags=0 AND entry.lang=? "
-		"ORDER BY ? DESC",
+	USER_ENTRY "AND entry.lang=? "
+		"ORDER BY entry.ctime DESC",
 	/* STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT */
-	"SELECT " USER "," ENTRY " FROM entry "
-		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE entry.flags=0 AND entry.lang=? "
-		"ORDER BY ? DESC LIMIT ?",
+	USER_ENTRY "AND entry.lang=? "
+		"ORDER BY entry.ctime DESC LIMIT ?",
 	/* STMT_ENTRY_LIST_PUBLIC_LIMIT */
-	"SELECT " USER "," ENTRY " FROM entry "
-		"INNER JOIN user ON user.id=entry.userid "
-		"WHERE entry.flags=0 "
-		"ORDER BY ? DESC LIMIT ?",
+	USER_ENTRY "ORDER BY entry.ctime DESC LIMIT ?",
+	/* STMT_ENTRY_LIST_PUBLIC_MTIME */
+	USER_ENTRY "ORDER BY entry.mtime DESC",
+	/* STMT_ENTRY_LIST_PUBLIC_MTIME_LANG */
+	USER_ENTRY "AND entry.lang=? "
+		"ORDER BY entry.mtime DESC",
+	/* STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT */
+	USER_ENTRY "AND entry.lang=? "
+		"ORDER BY entry.mtime DESC LIMIT ?",
+	/* STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT */
+	USER_ENTRY "ORDER BY entry.mtime DESC LIMIT ?",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
 		"longitude=?,mtime=?,flags=?,lang=?,aside=? "
@@ -1066,15 +1075,15 @@ sendpublic(struct kreq *r, const struct user *u)
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 first, i;
+	enum stmt	 estmt;
 	char		 buf[64];
-	const char	*lang, *order = "entry.ctime";
+	int		 mtime = 0;
+	const char	*lang;
 
-	if (NULL != (kpo = r->fieldmap[KEY_ORDER])) {
-		if (0 == strcmp(kpo->parsed.s, "ctime"))
-			order = "entry.ctime";
-		else if (0 == strcmp(kpo->parsed.s, "mtime"))
-			order = "entry.mtime";
-	}
+	/* Should we order by mtime instead of the default? */
+	if (NULL != (kpo = r->fieldmap[KEY_ORDER]) &&
+	    0 == strcmp(kpo->parsed.s, "mtime"))
+		mtime = 1;
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 	kplim = r->fieldmap[KEY_LIMIT];
@@ -1094,32 +1103,36 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
 	} else if (NULL != kplim && NULL == lang) {
 		/* Filter by establishing a limit. */
+		estmt = mtime ?
+			STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT :
+			STMT_ENTRY_LIST_PUBLIC_LIMIT;
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_LIST_PUBLIC_LIMIT], 
-			STMT_ENTRY_LIST_PUBLIC_LIMIT);
-		ksql_bind_str(stmt, 0, order);
-		ksql_bind_int(stmt, 1, kplim->parsed.i);
+			stmts[estmt], estmt);
+		ksql_bind_int(stmt, 0, kplim->parsed.i);
 	} else if (NULL != kplim && NULL != lang) {
 		/* Filter by establishing a limit and language. */
+		estmt = mtime ?
+			STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT :
+			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT;
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT], 
-			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT);
+			stmts[estmt], estmt);
 		ksql_bind_str(stmt, 0, lang);
-		ksql_bind_str(stmt, 1, order);
-		ksql_bind_int(stmt, 2, kplim->parsed.i);
+		ksql_bind_int(stmt, 1, kplim->parsed.i);
 	} else if (NULL == kplim && NULL != lang) {
 		/* Filter by language. */
+		estmt = mtime ?
+			STMT_ENTRY_LIST_PUBLIC_MTIME_LANG:
+			STMT_ENTRY_LIST_PUBLIC_LANG;
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_LIST_PUBLIC_LANG], 
-			STMT_ENTRY_LIST_PUBLIC_LANG);
+			stmts[estmt], estmt);
 		ksql_bind_str(stmt, 0, lang);
-		ksql_bind_str(stmt, 1, order);
 	} else {
 		/* Do not filter at all: grab all. */
+		estmt = mtime ?
+			STMT_ENTRY_LIST_PUBLIC_MTIME:
+			STMT_ENTRY_LIST_PUBLIC;
 		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_ENTRY_LIST_PUBLIC], 
-			STMT_ENTRY_LIST_PUBLIC);
-		ksql_bind_str(stmt, 0, order);
+			stmts[estmt], estmt);
 	}
 
 	first = 1;
