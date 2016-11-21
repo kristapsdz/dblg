@@ -1144,18 +1144,20 @@ sendpublic(struct kreq *r, const struct user *u)
 			first = 0;
 			/*
 			 * Etag tags into effect limit, language,
-			 * requesting user, and top-most entry time
+			 * requesting user, top-most entry time
 			 * (since these are sorted by mtime date, this
-			 * will change montonically increasing).
+			 * will change montonically increasing), and
+			 * whether we're sorting by mtime.
 			 */
 			snprintf(buf, sizeof(buf), 
 				"\"%" PRId64 "-%s%s%" PRId64 "-%" 
-				PRId64 "-%lld\"", 
+				PRId64 "-%lld-%d\"", 
 				NULL != kplim ? kplim->parsed.i : -1,
 				NULL != lang ? lang : "",
 				NULL != lang ? "-" : "",
 				NULL != u ? u->id : 0,
-				entry.id, (long long)entry.mtime);
+				entry.id, (long long)entry.mtime, 
+				mtime);
 			if (NULL != kr && 
 			    0 == strcmp(buf, kr->val)) {
 				sendhttp(r, KHTTP_304);
