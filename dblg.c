@@ -100,6 +100,7 @@ enum	key {
 	KEY_LINK,
 	KEY_MARKDOWN,
 	KEY_NAME,
+	KEY_ORDER,
 	KEY_PASS,
 	KEY_SAVE,
 	KEY_SESSCOOKIE,
@@ -164,22 +165,22 @@ static	const char *const stmts[STMT__MAX] = {
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 "
-		"ORDER BY entry.mtime DESC",
+		"ORDER BY ? DESC",
 	/* STMT_ENTRY_LIST_PUBLIC_LANG */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 AND entry.lang=? "
-		"ORDER BY entry.mtime DESC",
+		"ORDER BY ? DESC",
 	/* STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 AND entry.lang=? "
-		"ORDER BY entry.mtime DESC LIMIT ?",
+		"ORDER BY ? DESC LIMIT ?",
 	/* STMT_ENTRY_LIST_PUBLIC_LIMIT */
 	"SELECT " USER "," ENTRY " FROM entry "
 		"INNER JOIN user ON user.id=entry.userid "
 		"WHERE entry.flags=0 "
-		"ORDER BY entry.mtime DESC LIMIT ?",
+		"ORDER BY ? DESC LIMIT ?",
 	/* STMT_ENTRY_MODIFY */
 	"UPDATE entry SET contents=?,title=?,latitude=?,"
 		"longitude=?,mtime=?,flags=?,lang=?,aside=? "
@@ -241,6 +242,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_string, "link" }, /* KEY_LINK */
 	{ kvalid_stringne, "markdown" }, /* KEY_MARKDOWN */
 	{ kvalid_stringne, "name" }, /* KEY_NAME */
+	{ kvalid_stringne, "order" }, /* KEY_ORDER */
 	{ kvalid_stringne, "pass" }, /* KEY_PASS */
 	{ NULL, "save" }, /* KEY_SAVE */
 	{ kvalid_uint, "sesscookie" }, /* KEY_SESSCOOKIE */
@@ -1058,14 +1060,21 @@ static void
 sendpublic(struct kreq *r, const struct user *u)
 {
 	struct khead	*kr;
-	struct kpair	*kpi, *kplim;
+	struct kpair	*kpi, *kplim, *kpo;
 	struct kjsonreq	 req;
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 first, i;
 	char		 buf[64];
-	const char	*lang;
+	const char	*lang, *order = "entry.ctime";
+
+	if (NULL != (kpo = r->fieldmap[KEY_ORDER])) {
+		if (0 == strcmp(kpo->parsed.s, "ctime"))
+			order = "entry.ctime";
+		else if (0 == strcmp(kpo->parsed.s, "mtime"))
+			order = "entry.mtime";
+	}
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 	kplim = r->fieldmap[KEY_LIMIT];
@@ -1088,25 +1097,30 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LIMIT], 
 			STMT_ENTRY_LIST_PUBLIC_LIMIT);
-		ksql_bind_int(stmt, 0, kplim->parsed.i);
+		ksql_bind_str(stmt, 0, order);
+		ksql_bind_int(stmt, 1, kplim->parsed.i);
 	} else if (NULL != kplim && NULL != lang) {
 		/* Filter by establishing a limit and language. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT], 
 			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT);
 		ksql_bind_str(stmt, 0, lang);
-		ksql_bind_int(stmt, 1, kplim->parsed.i);
+		ksql_bind_str(stmt, 1, order);
+		ksql_bind_int(stmt, 2, kplim->parsed.i);
 	} else if (NULL == kplim && NULL != lang) {
 		/* Filter by language. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC_LANG], 
 			STMT_ENTRY_LIST_PUBLIC_LANG);
 		ksql_bind_str(stmt, 0, lang);
-	} else
+		ksql_bind_str(stmt, 1, order);
+	} else {
 		/* Do not filter at all: grab all. */
 		ksql_stmt_alloc(r->arg, &stmt, 
 			stmts[STMT_ENTRY_LIST_PUBLIC], 
 			STMT_ENTRY_LIST_PUBLIC);
+		ksql_bind_str(stmt, 0, order);
+	}
 
 	first = 1;
 	while (KSQL_ROW == ksql_stmt_step(stmt)) {
