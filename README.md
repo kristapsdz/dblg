@@ -122,7 +122,25 @@ then include [blog.js](blog.js) files in your application.
 
 In this invocation, the script is pulled from GitHub's CDN and invoked
 in an embedded HTML script.  The embedded script calls the `blogclient`
-function, passing it some example values.
+function, passing it some example values.  The `blogclient` function
+consists of two arguments:
+
+```javascript
+blogclient(url, options);
+```
+
+The `url` argument is the URL of the blog CGI script.  The `options`
+dictionary is optional and may consist of any or all of the following
+optional values:
+
+- `editor`: string pointing to the editor URL (no editor, if null)
+- `limit`: an integer limiting the number of pulled articles (else all)
+- `blog`: the URL for the blog page
+- `lang`: a string limiting the languages of pulled articles
+- `order`: a string of either `ctime` or `mtime` being the default sort
+  order of pulled articles
+- `entryid`: an integer that's the unique identifier of a specific entry
+  to pull down (if unspecified, this is checked in the query string)
 
 ## License
 

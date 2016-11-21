@@ -339,6 +339,22 @@
 		hide('blog');
 	}
 
+	/*
+	 * Function asynchronously invokes the dblg blog at "uri" with
+	 * the given options dictionary "opts".
+	 * The options consist of all optional values: "editor", a
+	 * string pointing to the editor URI (no editor, if null);
+	 * "limit", an integer limiting the number of pulled articles
+	 * (else all); "blog", the URI string for the blog page; "lang",
+	 * a string limiting the languages of pulled articles; and
+	 * "order", a string of either "ctime" or "mtime" being the
+	 * default sort order of pulled articles.
+	 *
+	 * Lastly, the query string is scanned for "entryid" integer,
+	 * which is also appended to the request variable to limit the
+	 * blog access.  This can be overridden by the "entryid" value
+	 * passed into the "opts" dictionary.
+	 */
 	function blogclient(uri, opts)
 	{
 		var entryid, query;
@@ -350,6 +366,9 @@
 			options.editor = 
 				(typeof opts.editor === 'string') ? 
 				opts.editor : null;
+			options.entryid = 
+				(typeof opts.entryid === 'number') ? 
+				opts.entryid : null;
 			options.limit = 
 				(typeof opts.limit === 'number') ? 
 				opts.limit : null;
@@ -359,17 +378,36 @@
 			options.lang = 
 				(typeof opts.lang === 'string') ? 
 				opts.lang : null;
+			options.order = 
+				(typeof opts.order === 'string') ? 
+				opts.order : null;
 		} else {
+			options.entryid = null;
 			options.editor = null;
 			options.limit = null;
 			options.blog = null;
 			options.lang = null;
+			options.order = null;
 		}
 
 		query = '';
-		if (null !== (entryid = getQueryVariable('entryid')))
+
+		/* 
+		 * First pull the query string IFF we didn't pass into
+		 * the options dictionary.
+		 */
+
+		if (null === options.entryid &&
+		    null !== (entryid = getQueryVariable('entryid')))
 			query += (0 === query.length ? '?' : '&') +
 				'entryid=' + entryid;
+
+		if (null !== options.entryid)
+			query += (0 === query.length ? '?' : '&') +
+				'entryid=' + options.entryid;
+		if (null !== options.order)
+			query += (0 === query.length ? '?' : '&') +
+				'limit=' + options.order;
 		if (null !== options.limit)
 			query += (0 === query.length ? '?' : '&') +
 				'limit=' + options.limit;
