@@ -672,19 +672,52 @@
 		if (e.checked)
 			return;
 
-		repl('submitform-preview-title',
-			find('submitform-title').value);
+		e = find('submitform-title');
+		if (null === e.value || 0 == e.value.length) {
+			hide('submitform-preview-title');
+			show('submitform-preview-notitle');
+		} else {
+			show('submitform-preview-title');
+			hide('submitform-preview-notitle');
+			repl('submitform-preview-title', e.value);
+		}
+
+		e = find('submitform-image');
+		if (null === e.value || 0 == e.value.length) {
+			hide('submitform-preview-image');
+			show('submitform-preview-noimage');
+		} else {
+			show('submitform-preview-image');
+			hide('submitform-preview-noimage');
+			repl('submitform-preview-image', e.value);
+			attr('submitform-preview-image', 'href', e.value);
+		}
 
 		conv = new showdown.Converter();
 
-		replhtml('submitform-preview-synopsis',
-			null !== conv ? 
-			conv.makeHtml(find('submitform-synopsis').value) : 
-			'');
-		replhtml('submitform-preview-content',
-			null !== conv ? 
-			conv.makeHtml(find('submitform-content').value) : 
-			'');
+		e = find('submitform-synopsis');
+		if (null === e.value || 0 == e.value.length) {
+			hide('submitform-preview-synopsis');
+			show('submitform-preview-nosynopsis');
+		} else {
+			show('submitform-preview-synopsis');
+			hide('submitform-preview-nosynopsis');
+			replhtml('submitform-preview-synopsis',
+				null !== conv ?  
+				conv.makeHtml(e.value) : '');
+		}
+
+		e = find('submitform-content');
+		if (null === e.value || 0 == e.value.length) {
+			hide('submitform-preview-content');
+			show('submitform-preview-nocontent');
+		} else {
+			show('submitform-preview-content');
+			hide('submitform-preview-nocontent');
+			replhtml('submitform-preview-content',
+				null !== conv ?  
+				conv.makeHtml(e.value) : '');
+		}
 	}
 
 	function blogeditor()

@@ -291,6 +291,10 @@
 					"description": "Article aside (may be zero length)",
 					"type": "string"
 				},
+				"image": {
+					"description": "Article image (may be zero length)",
+					"type": "string"
+				},
 				"id": {
 					"description": "Unique identifier",
 					"type": "integer"

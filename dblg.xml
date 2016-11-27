@@ -373,14 +373,24 @@
 							<div>
 								<label>Title</label>
 								<div id="submitform-preview-title"></div>
+								<div id="submitform-preview-notitle"><i>No title.</i></div>
+							</div>
+							<div>
+								<label>Image</label>
+								<div>
+									<a id="submitform-preview-image"></a>
+									<span id="submitform-preview-noimage"><i>No image.</i></span>
+								</div>
 							</div>
 							<div>
 								<label>Synopsis</label>
 								<div id="submitform-preview-synopsis"></div>
+								<div id="submitform-preview-nosynopsis"><i>No synopsis.</i></div>
 							</div>
 							<div>
 								<label>Contents</label>
 								<div id="submitform-preview-content"></div>
+								<div id="submitform-preview-nocontent"><i>No content.</i></div>
 							</div>
 						</div>
 						<fieldset>
@@ -399,6 +409,10 @@
 							<div>
 								<label for="submitform-lang">Language</label>
 								<div><input id="submitform-lang" type="text" name="lang" /></div>
+							</div>
+							<div>
+								<label for="submitform-image">Image URL</label>
+								<div><input id="submitform-image" type="url" name="image" /></div>
 							</div>
 							<div>
 								<label for="submitform-nocoords">

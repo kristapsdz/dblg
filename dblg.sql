@@ -17,6 +17,9 @@ CREATE TABLE entry (
 	-- Longitude (decimal degrees) of post.
 	-- Both latitude and longitude are required for location.
 	longitude REAL,
+	-- URL of an image associated with the entry.
+	-- This is useful for showing a picture next to, say, the aside.
+	image TEXT,
 	-- Creation time.
 	ctime INTEGER NOT NULL DEFAULT(strftime('%s', 'now')),
 	-- Last updated.

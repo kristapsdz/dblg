@@ -51,6 +51,7 @@ struct	user {
 };
 
 struct	entry {
+	char		*image; /* image URL (or NULL) */
 	char		*aside; /* non-binary aside (or NULL) */
 	char		*content; /* non-binary content */
 	char		*title; /* non-binary title */
@@ -93,6 +94,7 @@ enum	key {
 	KEY_EMAIL,
 	KEY_ENABLE,
 	KEY_ENTRYID,
+	KEY_IMAGE,
 	KEY_LANG,
 	KEY_LATITUDE,
 	KEY_LONGITUDE,
@@ -148,7 +150,7 @@ enum	stmt {
 		"user.cloudpath,user.flags,user.lang"
 #define	ENTRY	"entry.contents,entry.ctime,entry.id,entry.title," \
 		"entry.latitude,entry.longitude,entry.mtime," \
-		"entry.flags,entry.lang,entry.aside"
+		"entry.flags,entry.lang,entry.aside,entry.image"
 /* Convenience. */
 #define USER_ENTRY \
 		"SELECT " USER "," ENTRY " FROM entry " \
@@ -244,6 +246,7 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_email, "email" }, /* KEY_EMAIL */
 	{ kvalid_uint, "enable" }, /* KEY_ENABLE */
 	{ kvalid_int, "entryid" }, /* KEY_ENTRYID */
+	{ kvalid_string, "image" }, /* KEY_IMAGE */
 	{ kvalid_string, "lang" }, /* KEY_LANG */
 	{ kvalid_double, "latitude" }, /* KEY_LATITUDE */
 	{ kvalid_double, "longitude" }, /* KEY_LONGITUDE */
@@ -375,6 +378,7 @@ db_entry_unfill(struct entry *p)
 	if (NULL == p)
 		return;
 	free(p->aside);
+	free(p->image);
 	free(p->content);
 	free(p->title);
 	free(p->lang);
@@ -404,6 +408,7 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 	p->flags = ksql_stmt_int(stmt, (*pos)++);
 	col_if_not_null(&p->lang, stmt, (*pos)++);
 	col_if_not_null(&p->aside, stmt, (*pos)++);
+	col_if_not_null(&p->image, stmt, (*pos)++);
 }
 
 static int64_t
@@ -798,6 +803,7 @@ json_putentry(struct kjsonreq *req, const struct user *u,
 	kjson_putintp(req, "id", entry->id);
 	kjson_putstringp(req, "content", entry->content);
 	json_if_not_null(req, "aside", entry->aside);
+	json_if_not_null(req, "image", entry->image);
 	kjson_putstringp(req, "title", entry->title);
 	if (entry->coords) {
 		kjson_objp_open(req, "coords");
