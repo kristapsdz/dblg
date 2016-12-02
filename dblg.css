@@ -35,7 +35,7 @@ a							{ text-decoration: none; }
 #show-usermod:checked ~ #usermod,
 #show-edits:checked ~ #edits,
 #show-entry:checked ~ #entry				{ opacity: 1; 
-							  max-height: 100em; }
+							  max-height: none; }
 #loggedin nav						{ display: flex; 
 							  display: -webkit-flex;
 							  align-items: center;
