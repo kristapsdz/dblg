@@ -524,6 +524,7 @@
 		}
 
 		repl('submitform-synopsis', entry.aside);
+		attr('submitform-image', 'value', entry.image);
 		repl('submitform-content', entry.content);
 		attr('submitform-title', 'value', entry.title);
 		attr('submitform-entryid', 'value', entry.id);

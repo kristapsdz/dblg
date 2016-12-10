@@ -225,6 +225,15 @@
 		for (i = 0; i < sz; i++) {
 			cln = sub.cloneNode(true);
 			e.appendChild(cln);
+
+			if (res.entries[i].aside.length)
+				cln.classList.add('blog-has-aside');
+			if (res.entries[i].image.length)
+				cln.classList.add('blog-has-image');
+			if (res.entries[i].aside.length &&
+			    res.entries[i].image.length)
+				cln.classList.add('blog-has-image-aside');
+
 			repl(cln, 'blog-ctime', moment.unix
 				(res.entries[i].ctime).calendar());
 			repl(cln, 'blog-mtime', moment.unix
@@ -237,6 +246,9 @@
 				showc(cln, 'blog-ctime-box');
 				hidec(cln, 'blog-mtime-box');
 			}
+
+			attr(cln, 'blog-image', 'src', 
+				res.entries[i].image);
 
 			repl(cln, 'blog-author', 
 				res.entries[i].user.name);
@@ -269,13 +281,20 @@
 				hidec(cln, 'blog-facebooklink');
 			}
 
-			res.entries[i].html = null !== conv ?
+			res.entries[i].contenthtml = null !== conv ?
 				conv.makeHtml(res.entries[i].content) :
 				null;
+			res.entries[i].asidehtml = null !== conv && 
+				res.entries[i].aside.length ?
+				conv.makeHtml(res.entries[i].aside) :
+				null;
 
-			if (null !== res.entries[i].html)
+			if (null !== res.entries[i].contenthtml)
 				replhtml(cln, 'blog-content', 
-					res.entries[i].html);
+					res.entries[i].contenthtml);
+			if (null !== res.entries[i].asidehtml)
+				replhtml(cln, 'blog-aside', 
+					res.entries[i].asidehtml);
 
 			if (null !== res.entries[i].coords) {
 				showc(cln, 'blog-coords');
