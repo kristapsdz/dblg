@@ -133,7 +133,7 @@ dblg.db: dblg.sql
 	    -e 's!@AHASH@!$(AHASH)!' dblg.sql | sqlite3 $@
 
 dblg: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lz -lksql -lsqlite3
+	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lkcgixml -lz -lksql -lsqlite3
 
 dblg.json: dblg.in.json
 	@rm -f $@
