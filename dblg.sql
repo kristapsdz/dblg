@@ -1,3 +1,16 @@
+-- "Meta" information relating to the entire blog.
+-- This will be created on-demand, if not found.
+
+CREATE TABLE meta (
+	-- The last modification time to any article.
+	mtime INTEGER NOT NULL DEFAULT(0),
+	-- Used to make sure there's only one row.
+	-- DO NOT set this value to non-zero.
+	lock INTEGER NOT NULL DEFAULT(0),
+	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+	unique(lock)
+);
+
 -- A blog entry.
 -- This can be associated with a location (latitude and longitude), and
 -- may be edited over time.
