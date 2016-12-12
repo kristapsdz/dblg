@@ -28,7 +28,12 @@
 
 #include <kcgi.h>
 #include <kcgijson.h>
+#include <kcgixml.h>
 #include <ksql.h>
+
+struct	meta {
+	int64_t		 mtime;
+};
 
 struct	cloud {	       
 	char		*key; /* API key */
@@ -68,6 +73,7 @@ struct	entry {
 
 enum	page {
 	PAGE_ADD_USER,
+	PAGE_ATOM,
 	PAGE_INDEX,
 	PAGE_LOGIN,
 	PAGE_LOGOUT,
@@ -127,6 +133,8 @@ enum	stmt {
 	STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT,
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
+	STMT_META_GET,
+	STMT_META_NEW,
 	STMT_SESS_DEL,
 	STMT_SESS_GET,
 	STMT_SESS_NEW,
@@ -200,6 +208,10 @@ static	const char *const stmts[STMT__MAX] = {
 	"INSERT INTO entry (contents,title,userid,latitude,"
 		"longitude,flags,lang,aside,image) "
 		"VALUES (?,?,?,?,?,?,?,?,?)",
+	/* STMT_META_GET */
+	"SELECT mtime FROM meta LIMIT 1",
+	/* STMT_META_NEW */
+	"INSERT INTO meta (mtime) VALUES (?)",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -265,6 +277,7 @@ static const struct kvalid keys[KEY__MAX] = {
 
 static const char *const pages[PAGE__MAX] = {
 	"adduser", /* PAGE_ADD_USER */
+	"atom", /* PAGE_ATOM */
 	"index", /* PAGE_INDEX */
 	"login", /* PAGE_LOGIN */
 	"logout", /* PAGE_LOGOUT */
@@ -1076,6 +1089,141 @@ sendindex(struct kreq *r, const struct user *u)
 	kjson_close(&req);
 }
 
+enum	xml {
+	XML_AUTHOR,
+	XML_EMAIL,
+	XML_ENTRY,
+	XML_FEED,
+	XML_LINK,
+	XML_NAME,
+	XML_PUBLISHED,
+	XML_TITLE,
+	XML_UPDATED,
+	XML_URI,
+	XML__MAX
+};
+
+static	const char *xmls[XML__MAX] = {
+	"author", /* XML_AUTHOR */
+	"email", /* XML_EMAIL */
+	"entry", /* XML_ENTRY */
+	"feed", /* XML_FEED */
+	"link", /* XML_LINK */
+	"name", /* XML_NAME */
+	"published", /* XML_PUBLISHED */
+	"title", /* XML_TITLE */
+	"updated", /* XML_UPDATED */
+	"uri", /* XML_URI */
+};
+
+static void
+sendatom(struct kreq *r)
+{
+	struct kxmlreq	 req;
+	struct ksqlstmt	*stmt;
+	struct entry	 entry;
+	struct user	 user;
+	enum ksqlc	 c;
+	size_t		 i;
+	char		 buf[32];
+	int64_t		 mtime;
+
+	/*
+	 * Begin by fetching the global last modifier.
+	 */
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_META_GET], 
+		STMT_META_GET);
+	if (KSQL_ROW != ksql_stmt_step(stmt)) {
+		ksql_stmt_free(stmt);
+		kutil_info(r, NULL, "creating meta row");
+		mtime = time(NULL);
+
+		/* 
+		 * We might have another creation in the meanwhile, so
+		 * make sure we catch the constraint.
+		 */
+
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_META_NEW], 
+			STMT_META_NEW);
+		ksql_bind_int(stmt, 0, mtime);
+		ksql_stmt_cstep(stmt);
+		ksql_stmt_free(stmt);
+
+		/* Re-fetch. */
+
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_META_GET], 
+			STMT_META_GET);
+		c = ksql_stmt_step(stmt);
+		assert(KSQL_ROW == c);
+		mtime = ksql_stmt_int(stmt, 0);
+		ksql_stmt_free(stmt);
+	} else {
+		mtime = ksql_stmt_int(stmt, 0);
+		ksql_stmt_free(stmt);
+	}
+
+	sendhttp(r, KHTTP_200);
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_ENTRY_LIST_PUBLIC], 
+		STMT_ENTRY_LIST_PUBLIC);
+	kxml_open(&req, r, xmls, XML__MAX);
+
+	kxml_pushattrs(&req, XML_FEED, "xmlns", 
+		"http://www.w3.org/2005/Atom", NULL);
+
+	kutil_epoch2utcstr(mtime, buf, sizeof(buf));
+	kxml_push(&req, XML_UPDATED);
+	kxml_puts(&req, buf);
+	kxml_pop(&req);
+
+	while (KSQL_ROW == ksql_stmt_step(stmt)) {
+		kxml_push(&req, XML_ENTRY);
+		i = 0;
+		db_user_fill(&user, stmt, &i);
+		db_entry_fill(&entry, stmt, &i);
+		kxml_push(&req, XML_TITLE);
+		kxml_puts(&req, entry.title);
+		kxml_pop(&req);
+
+		kutil_epoch2utcstr(entry.ctime, buf, sizeof(buf));
+		kxml_push(&req, XML_PUBLISHED);
+		kxml_puts(&req, buf);
+		kxml_pop(&req);
+
+		kutil_epoch2utcstr(entry.mtime, buf, sizeof(buf));
+		kxml_push(&req, XML_UPDATED);
+		kxml_puts(&req, buf);
+		kxml_pop(&req);
+
+		kxml_push(&req, XML_AUTHOR);
+		kxml_push(&req, XML_NAME);
+		kxml_puts(&req, user.name);
+		kxml_pop(&req);
+		kxml_push(&req, XML_EMAIL);
+		kxml_puts(&req, user.email);
+		kxml_pop(&req);
+		if (NULL != user.link) {
+			kxml_push(&req, XML_URI);
+			kxml_puts(&req, user.link);
+			kxml_pop(&req);
+		}
+		kxml_pop(&req);
+
+		db_user_unfill(&user);
+		db_entry_unfill(&entry);
+
+		kxml_pop(&req);
+	}
+
+	kxml_close(&req);
+	ksql_stmt_free(stmt);
+}
+
 static void
 sendpublic(struct kreq *r, const struct user *u)
 {
@@ -1332,7 +1480,10 @@ main(void)
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
 	} else if (PAGE__MAX == r.page || 
-	           KMIME_APP_JSON != r.mime) {
+	           (KMIME_APP_JSON != r.mime &&
+		    PAGE_ATOM != r.page) ||
+		   (KMIME_TEXT_XML != r.mime &&
+		    PAGE_ATOM == r.page)) {
 		sendhttp(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
@@ -1365,7 +1516,9 @@ main(void)
 	/* User authorisation. */
 
 	if (PAGE_LOGIN != r.page &&
-	    PAGE_PUBLIC != r.page && NULL == u) {
+	    PAGE_PUBLIC != r.page && 
+	    PAGE_ATOM != r.page && 
+	    NULL == u) {
 		sendhttp(&r, KHTTP_403);
 		khttp_free(&r);
 		ksql_free(sql);
@@ -1394,6 +1547,9 @@ main(void)
 	switch (r.page) {
 	case (PAGE_ADD_USER):
 		sendadduser(&r, u);
+		break;
+	case (PAGE_ATOM):
+		sendatom(&r);
 		break;
 	case (PAGE_INDEX):
 		sendindex(&r, u);
