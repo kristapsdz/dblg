@@ -31,8 +31,37 @@
 #include <kcgixml.h>
 #include <ksql.h>
 
-struct	meta {
-	int64_t		 mtime;
+/*
+ * Index values for atom feed XML elements.
+ */
+enum	xml {
+	XML_AUTHOR,
+	XML_EMAIL,
+	XML_ENTRY,
+	XML_FEED,
+	XML_LINK,
+	XML_NAME,
+	XML_PUBLISHED,
+	XML_TITLE,
+	XML_UPDATED,
+	XML_URI,
+	XML__MAX
+};
+
+/*
+ * Element names of atom feed XML.
+ */
+static	const char *xmls[XML__MAX] = {
+	"author", /* XML_AUTHOR */
+	"email", /* XML_EMAIL */
+	"entry", /* XML_ENTRY */
+	"feed", /* XML_FEED */
+	"link", /* XML_LINK */
+	"name", /* XML_NAME */
+	"published", /* XML_PUBLISHED */
+	"title", /* XML_TITLE */
+	"updated", /* XML_UPDATED */
+	"uri", /* XML_URI */
 };
 
 struct	cloud {	       
@@ -135,6 +164,7 @@ enum	stmt {
 	STMT_ENTRY_NEW,
 	STMT_META_GET,
 	STMT_META_NEW,
+	STMT_META_UPDATE,
 	STMT_SESS_DEL,
 	STMT_SESS_GET,
 	STMT_SESS_NEW,
@@ -212,6 +242,8 @@ static	const char *const stmts[STMT__MAX] = {
 	"SELECT mtime FROM meta LIMIT 1",
 	/* STMT_META_NEW */
 	"INSERT INTO meta (mtime) VALUES (?)",
+	/* STMT_META_UPDATE */
+	"INSERT OR REPLACE INTO meta (mtime) VALUES (?)",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -424,6 +456,70 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 	col_if_not_null(&p->image, stmt, (*pos)++);
 }
 
+/*
+ * Get when we were last modified, which is "now" if we've never been
+ * modified before.
+ * This can be used as a "last-modified-time" value.
+ */
+static int64_t
+db_meta_get(struct kreq *r)
+{
+	struct ksqlstmt	*stmt;
+	int64_t		 mtime;
+	enum ksqlc	 c;
+
+	/* Begin by fetching the global last modifier. */
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_META_GET], 
+		STMT_META_GET);
+	if (KSQL_ROW != ksql_stmt_step(stmt)) {
+		ksql_stmt_free(stmt);
+		kutil_info(r, NULL, "creating meta row");
+		mtime = time(NULL);
+
+		/* 
+		 * We might have another creation in the meanwhile, so
+		 * make sure we catch the constraint.
+		 */
+
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_META_NEW], 
+			STMT_META_NEW);
+		ksql_bind_int(stmt, 0, mtime);
+		ksql_stmt_cstep(stmt);
+		ksql_stmt_free(stmt);
+
+		/* Re-fetch. */
+
+		ksql_stmt_alloc(r->arg, &stmt, 
+			stmts[STMT_META_GET], 
+			STMT_META_GET);
+		c = ksql_stmt_step(stmt);
+		assert(KSQL_ROW == c);
+		mtime = ksql_stmt_int(stmt, 0);
+		ksql_stmt_free(stmt);
+	} else {
+		mtime = ksql_stmt_int(stmt, 0);
+		ksql_stmt_free(stmt);
+	}
+
+	return(mtime);
+}
+
+static void
+db_meta_update(struct kreq *r)
+{
+	struct ksqlstmt	*stmt;
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_META_UPDATE], 
+		STMT_META_UPDATE);
+	ksql_bind_int(stmt, 0, time(NULL));
+	ksql_stmt_step(stmt);
+	ksql_stmt_free(stmt);
+}
+
 static int64_t
 db_entry_modify(struct kreq *r, const struct user *user, 
 	const char *title, const char *text, 
@@ -454,7 +550,10 @@ db_entry_modify(struct kreq *r, const struct user *user,
 	ksql_bind_int(stmt, 10, id);
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
-	kutil_info(r, user->email, "modified entry: %" PRId64, id);
+	kutil_info(r, user->email, 
+		"modified entry: %" PRId64, id);
+
+	db_meta_update(r);
 	return(id);
 }
 
@@ -488,7 +587,10 @@ db_entry_new(struct kreq *r, const struct user *user,
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	ksql_lastid(r->arg, &id);
-	kutil_info(r, user->email, "new entry: %" PRId64, id);
+	kutil_info(r, user->email, 
+		"new entry: %" PRId64, id);
+
+	db_meta_update(r);
 	return(id);
 }
 
@@ -617,8 +719,12 @@ db_user_mod_email(struct kreq *r,
 	ksql_bind_int(stmt, 1, u->id);
 	c = ksql_stmt_cstep(stmt);
 	ksql_stmt_free(stmt);
-	if (KSQL_CONSTRAINT != c)
-		kutil_info(r, u->email, "changed email: %s", email);
+	if (KSQL_CONSTRAINT != c) {
+		kutil_info(r, u->email, 
+			"changed email: %s", email);
+		/* Update: this is public data. */
+		db_meta_update(r);
+	}
 	return(KSQL_CONSTRAINT != c);
 }
 
@@ -694,6 +800,9 @@ db_user_mod_link(struct kreq *r,
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	kutil_info(r, u->email, "changed link");
+
+	/* Update: this is public data. */
+	db_meta_update(r);
 }
 
 static int
@@ -736,6 +845,9 @@ db_user_mod_name(struct kreq *r,
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	kutil_info(r, u->email, "changed name");
+
+	/* Update: this is public data. */
+	db_meta_update(r);
 }
 
 static void
@@ -752,6 +864,7 @@ db_entry_delete(struct kreq *r,
 	ksql_stmt_step(stmt);
 	ksql_stmt_free(stmt);
 	kutil_info(r, u->email, "deleted entry: %" PRId64, id);
+	db_meta_update(r);
 }
 
 static void
@@ -1088,32 +1201,6 @@ sendindex(struct kreq *r, const struct user *u)
 	kjson_close(&req);
 }
 
-enum	xml {
-	XML_AUTHOR,
-	XML_EMAIL,
-	XML_ENTRY,
-	XML_FEED,
-	XML_LINK,
-	XML_NAME,
-	XML_PUBLISHED,
-	XML_TITLE,
-	XML_UPDATED,
-	XML_URI,
-	XML__MAX
-};
-
-static	const char *xmls[XML__MAX] = {
-	"author", /* XML_AUTHOR */
-	"email", /* XML_EMAIL */
-	"entry", /* XML_ENTRY */
-	"feed", /* XML_FEED */
-	"link", /* XML_LINK */
-	"name", /* XML_NAME */
-	"published", /* XML_PUBLISHED */
-	"title", /* XML_TITLE */
-	"updated", /* XML_UPDATED */
-	"uri", /* XML_URI */
-};
 
 static void
 sendatom(struct kreq *r)
@@ -1122,48 +1209,11 @@ sendatom(struct kreq *r)
 	struct ksqlstmt	*stmt;
 	struct entry	 entry;
 	struct user	 user;
-	enum ksqlc	 c;
 	size_t		 i;
 	char		 buf[32];
 	int64_t		 mtime;
 
-	/*
-	 * Begin by fetching the global last modifier.
-	 */
-
-	ksql_stmt_alloc(r->arg, &stmt, 
-		stmts[STMT_META_GET], 
-		STMT_META_GET);
-	if (KSQL_ROW != ksql_stmt_step(stmt)) {
-		ksql_stmt_free(stmt);
-		kutil_info(r, NULL, "creating meta row");
-		mtime = time(NULL);
-
-		/* 
-		 * We might have another creation in the meanwhile, so
-		 * make sure we catch the constraint.
-		 */
-
-		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_META_NEW], 
-			STMT_META_NEW);
-		ksql_bind_int(stmt, 0, mtime);
-		ksql_stmt_cstep(stmt);
-		ksql_stmt_free(stmt);
-
-		/* Re-fetch. */
-
-		ksql_stmt_alloc(r->arg, &stmt, 
-			stmts[STMT_META_GET], 
-			STMT_META_GET);
-		c = ksql_stmt_step(stmt);
-		assert(KSQL_ROW == c);
-		mtime = ksql_stmt_int(stmt, 0);
-		ksql_stmt_free(stmt);
-	} else {
-		mtime = ksql_stmt_int(stmt, 0);
-		ksql_stmt_free(stmt);
-	}
+	mtime = db_meta_get(r);
 
 	sendhttp(r, KHTTP_200);
 
@@ -1235,17 +1285,23 @@ sendpublic(struct kreq *r, const struct user *u)
 	size_t		 first, i;
 	enum stmt	 estmt;
 	char		 buf[64];
-	int		 mtime = 0;
+	int		 omtime = 0;
 	const char	*lang;
+	int64_t		 mtime;
+
+	mtime = db_meta_get(r);
 
 	/* Should we order by mtime instead of the default? */
+
 	if (NULL != (kpo = r->fieldmap[KEY_ORDER]) &&
 	    0 == strcmp(kpo->parsed.s, "mtime"))
-		mtime = 1;
+		omtime = 1;
 
 	kr = r->reqmap[KREQU_IF_NONE_MATCH];
 	kplim = r->fieldmap[KEY_LIMIT];
+
 	/* Can be NULL or empty: either way, disregard. */
+
 	lang = NULL == r->fieldmap[KEY_LANG] ? 
 		NULL : '\0' == *r->fieldmap[KEY_LANG]->parsed.s ?
 		NULL : r->fieldmap[KEY_LANG]->parsed.s;
@@ -1261,7 +1317,7 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_bind_int(stmt, 0, kpi->parsed.i);
 	} else if (NULL != kplim && NULL == lang) {
 		/* Filter by establishing a limit. */
-		estmt = mtime ?
+		estmt = omtime ?
 			STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT :
 			STMT_ENTRY_LIST_PUBLIC_LIMIT;
 		ksql_stmt_alloc(r->arg, &stmt, 
@@ -1269,7 +1325,7 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_bind_int(stmt, 0, kplim->parsed.i);
 	} else if (NULL != kplim && NULL != lang) {
 		/* Filter by establishing a limit and language. */
-		estmt = mtime ?
+		estmt = omtime ?
 			STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT :
 			STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT;
 		ksql_stmt_alloc(r->arg, &stmt, 
@@ -1278,7 +1334,7 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_bind_int(stmt, 1, kplim->parsed.i);
 	} else if (NULL == kplim && NULL != lang) {
 		/* Filter by language. */
-		estmt = mtime ?
+		estmt = omtime ?
 			STMT_ENTRY_LIST_PUBLIC_MTIME_LANG:
 			STMT_ENTRY_LIST_PUBLIC_LANG;
 		ksql_stmt_alloc(r->arg, &stmt, 
@@ -1286,7 +1342,7 @@ sendpublic(struct kreq *r, const struct user *u)
 		ksql_bind_str(stmt, 0, lang);
 	} else {
 		/* Do not filter at all: grab all. */
-		estmt = mtime ?
+		estmt = omtime ?
 			STMT_ENTRY_LIST_PUBLIC_MTIME:
 			STMT_ENTRY_LIST_PUBLIC;
 		ksql_stmt_alloc(r->arg, &stmt, 
@@ -1300,23 +1356,8 @@ sendpublic(struct kreq *r, const struct user *u)
 		db_entry_fill(&entry, stmt, &i);
 		if (first) {
 			first = 0;
-			/*
-			 * Etag tags into effect limit, language,
-			 * requesting user, top-most entry time
-			 * (since these are sorted by mtime date, this
-			 * will change montonically increasing), and
-			 * whether we're sorting by mtime.
-			 */
 			snprintf(buf, sizeof(buf), 
-				"\"%" PRId64 "-%s%s%" PRId64 "-%" 
-				PRId64 "-%lld-%d\"", 
-				NULL != kplim ? kplim->parsed.i : -1,
-				NULL != lang ? lang : "",
-				NULL != lang ? "-" : "",
-				NULL != u ? u->id : 0,
-				entry.id, (long long)entry.mtime, 
-				mtime);
-#if 0
+				"\"%" PRId64 "\"", mtime);
 			if (NULL != kr && 
 			    0 == strcmp(buf, kr->val)) {
 				sendhttp(r, KHTTP_304);
@@ -1325,7 +1366,6 @@ sendpublic(struct kreq *r, const struct user *u)
 				db_entry_unfill(&entry);
 				return;
 			} 
-#endif
 			sendhttphead(r, KHTTP_200);
 			khttp_head(r, kresps[KRESP_ETAG], "%s", buf);
 			khttp_body(r);

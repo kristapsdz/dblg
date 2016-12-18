@@ -1,8 +1,11 @@
--- "Meta" information relating to the entire blog.
+-- "Meta" information relating to the entire blog as an object: nothing
+-- in here semantically relates to the blog itself.
 -- This will be created on-demand, if not found.
+-- It will only have one row.
 
 CREATE TABLE meta (
-	-- The last modification time to any article.
+	-- The last modification time to any article or any user data
+	-- that is public-facing.
 	mtime INTEGER NOT NULL DEFAULT(0),
 	-- Used to make sure there's only one row.
 	-- DO NOT set this value to non-zero.
