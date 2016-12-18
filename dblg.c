@@ -102,7 +102,9 @@ struct	entry {
 
 enum	page {
 	PAGE_ADD_USER,
+#if 0
 	PAGE_ATOM,
+#endif
 	PAGE_INDEX,
 	PAGE_LOGIN,
 	PAGE_LOGOUT,
@@ -309,7 +311,9 @@ static const struct kvalid keys[KEY__MAX] = {
 
 static const char *const pages[PAGE__MAX] = {
 	"adduser", /* PAGE_ADD_USER */
+#if 0
 	"atom", /* PAGE_ATOM */
+#endif
 	"index", /* PAGE_INDEX */
 	"login", /* PAGE_LOGIN */
 	"logout", /* PAGE_LOGOUT */
@@ -1202,6 +1206,7 @@ sendindex(struct kreq *r, const struct user *u)
 }
 
 
+#if 0
 static void
 sendatom(struct kreq *r)
 {
@@ -1272,6 +1277,7 @@ sendatom(struct kreq *r)
 	kxml_close(&req);
 	ksql_stmt_free(stmt);
 }
+#endif
 
 static void
 sendpublic(struct kreq *r, const struct user *u)
@@ -1521,10 +1527,12 @@ main(void)
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
 	} else if (PAGE__MAX == r.page || 
-	           (KMIME_APP_JSON != r.mime &&
-		    PAGE_ATOM != r.page) ||
+	           KMIME_APP_JSON != r.mime) {
+#if 0
+		   && PAGE_ATOM != r.page) ||
 		   (KMIME_TEXT_XML != r.mime &&
 		    PAGE_ATOM == r.page)) {
+#endif
 		sendhttp(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
@@ -1558,7 +1566,9 @@ main(void)
 
 	if (PAGE_LOGIN != r.page &&
 	    PAGE_PUBLIC != r.page && 
+#if 0
 	    PAGE_ATOM != r.page && 
+#endif
 	    NULL == u) {
 		sendhttp(&r, KHTTP_403);
 		khttp_free(&r);
@@ -1589,9 +1599,11 @@ main(void)
 	case (PAGE_ADD_USER):
 		sendadduser(&r, u);
 		break;
+#if 0
 	case (PAGE_ATOM):
 		sendatom(&r);
 		break;
+#endif
 	case (PAGE_INDEX):
 		sendindex(&r, u);
 		break;
