@@ -846,8 +846,7 @@ sendremove(struct kreq *r, const struct user *u)
 	}
 
 	assert(NULL != u);
-	db_entry_delete(r->arg, u,
-		r->fieldmap[KEY_ENTRYID]->parsed.i);
+	db_entry_delete(r, u, kpn->parsed.i);
 	sendhttp(r, KHTTP_200);
 }
 
@@ -1317,6 +1316,7 @@ sendpublic(struct kreq *r, const struct user *u)
 				NULL != u ? u->id : 0,
 				entry.id, (long long)entry.mtime, 
 				mtime);
+#if 0
 			if (NULL != kr && 
 			    0 == strcmp(buf, kr->val)) {
 				sendhttp(r, KHTTP_304);
@@ -1325,6 +1325,7 @@ sendpublic(struct kreq *r, const struct user *u)
 				db_entry_unfill(&entry);
 				return;
 			} 
+#endif
 			sendhttphead(r, KHTTP_200);
 			khttp_head(r, kresps[KRESP_ETAG], "%s", buf);
 			khttp_body(r);
