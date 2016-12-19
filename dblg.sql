@@ -1,12 +1,16 @@
--- "Meta" information relating to the entire blog as an object: nothing
--- in here semantically relates to the blog itself.
--- This will be created on-demand, if not found.
+-- "Meta" information relating to the entire blog as an object.
+-- This will be created on-demand, if not found, with meaningful
+-- defaults.
 -- It will only have one row.
 
 CREATE TABLE meta (
 	-- The last modification time to any article or any user data
 	-- that is public-facing.
 	mtime INTEGER NOT NULL DEFAULT(0),
+	-- The title of the blog.
+	-- This is used in the Atom feed for reporting the title.
+	-- If unspecified, it will be set to the hostname.
+	title TEXT,
 	-- Used to make sure there's only one row.
 	-- DO NOT set this value to non-zero.
 	lock INTEGER NOT NULL DEFAULT(0),

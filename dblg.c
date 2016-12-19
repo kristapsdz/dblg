@@ -39,6 +39,7 @@ enum	xml {
 	XML_EMAIL,
 	XML_ENTRY,
 	XML_FEED,
+	XML_ID,
 	XML_LINK,
 	XML_NAME,
 	XML_PUBLISHED,
@@ -56,12 +57,18 @@ static	const char *xmls[XML__MAX] = {
 	"email", /* XML_EMAIL */
 	"entry", /* XML_ENTRY */
 	"feed", /* XML_FEED */
+	"id", /* XML_ID */
 	"link", /* XML_LINK */
 	"name", /* XML_NAME */
 	"published", /* XML_PUBLISHED */
 	"title", /* XML_TITLE */
 	"updated", /* XML_UPDATED */
 	"uri", /* XML_URI */
+};
+
+struct	meta {
+	int64_t	 mtime; /* last modified time */
+	char	*title; /* title (or NULL) */
 };
 
 struct	cloud {	       
@@ -102,9 +109,7 @@ struct	entry {
 
 enum	page {
 	PAGE_ADD_USER,
-#if 0
 	PAGE_ATOM,
-#endif
 	PAGE_INDEX,
 	PAGE_LOGIN,
 	PAGE_LOGOUT,
@@ -113,6 +118,7 @@ enum	page {
 	PAGE_MOD_ENABLE,
 	PAGE_MOD_LANG,
 	PAGE_MOD_LINK,
+	PAGE_MOD_META_TITLE,
 	PAGE_MOD_NAME,
 	PAGE_MOD_PASS,
 	PAGE_PUBLIC,
@@ -165,6 +171,7 @@ enum	stmt {
 	STMT_ENTRY_MODIFY,
 	STMT_ENTRY_NEW,
 	STMT_META_GET,
+	STMT_META_MOD_TITLE,
 	STMT_META_NEW,
 	STMT_META_UPDATE,
 	STMT_SESS_DEL,
@@ -196,6 +203,7 @@ enum	stmt {
 		"SELECT " USER "," ENTRY " FROM entry " \
 		"INNER JOIN user ON user.id=entry.userid " \
 		"WHERE entry.flags=0 "
+#define META	"meta.mtime,meta.title"
 
 static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_DELETE */
@@ -241,7 +249,9 @@ static	const char *const stmts[STMT__MAX] = {
 		"longitude,flags,lang,aside,image) "
 		"VALUES (?,?,?,?,?,?,?,?,?)",
 	/* STMT_META_GET */
-	"SELECT mtime FROM meta LIMIT 1",
+	"SELECT " META " FROM meta LIMIT 1",
+	/* STMT_META_MOD_TITLE */
+	"INSERT OR REPLACE INTO meta (mtime,title) VALUES (?,?)",
 	/* STMT_META_NEW */
 	"INSERT INTO meta (mtime) VALUES (?)",
 	/* STMT_META_UPDATE */
@@ -311,9 +321,7 @@ static const struct kvalid keys[KEY__MAX] = {
 
 static const char *const pages[PAGE__MAX] = {
 	"adduser", /* PAGE_ADD_USER */
-#if 0
 	"atom", /* PAGE_ATOM */
-#endif
 	"index", /* PAGE_INDEX */
 	"login", /* PAGE_LOGIN */
 	"logout", /* PAGE_LOGOUT */
@@ -322,6 +330,7 @@ static const char *const pages[PAGE__MAX] = {
 	"modenable", /* PAGE_MOD_ENABLE */
 	"modlang", /* PAGE_MOD_LANG */
 	"modlink", /* PAGE_MOD_LINK */
+	"modmetatitle", /* PAGE_MOD_META_TITLE */
 	"modname", /* PAGE_MOD_NAME */
 	"modpass", /* PAGE_MOD_PASS */
 	"public", /* PAGE_PUBLIC */
@@ -421,6 +430,26 @@ db_user_fill(struct user *p, struct ksqlstmt *stmt, size_t *pos)
 }
 
 static void
+db_meta_unfill(struct meta *p)
+{
+
+	if (NULL != p)
+		free(p->title);
+}
+
+static void
+db_meta_fill(struct meta *p, struct ksqlstmt *stmt, size_t *pos)
+{
+	size_t	 i = 0;
+
+	if (NULL == pos)
+		pos = &i;
+	memset(p, 0, sizeof(struct meta));
+	p->mtime = ksql_stmt_int(stmt, (*pos)++);
+	col_if_not_null(&p->title, stmt, (*pos)++);
+}
+
+static void
 db_entry_unfill(struct entry *p)
 {
 
@@ -461,12 +490,12 @@ db_entry_fill(struct entry *p, struct ksqlstmt *stmt, size_t *pos)
 }
 
 /*
- * Get when we were last modified, which is "now" if we've never been
- * modified before.
- * This can be used as a "last-modified-time" value.
+ * Get our meta-data (title, mtime, etc.).
+ * This will always succeed, and always return valid data even if we had
+ * to create it in the process.
  */
-static int64_t
-db_meta_get(struct kreq *r)
+static void
+db_meta_get(struct kreq *r, struct meta *p)
 {
 	struct ksqlstmt	*stmt;
 	int64_t		 mtime;
@@ -501,14 +530,12 @@ db_meta_get(struct kreq *r)
 			STMT_META_GET);
 		c = ksql_stmt_step(stmt);
 		assert(KSQL_ROW == c);
-		mtime = ksql_stmt_int(stmt, 0);
+		db_meta_fill(p, stmt, NULL);
 		ksql_stmt_free(stmt);
 	} else {
-		mtime = ksql_stmt_int(stmt, 0);
+		db_meta_fill(p, stmt, NULL);
 		ksql_stmt_free(stmt);
 	}
-
-	return(mtime);
 }
 
 static void
@@ -752,6 +779,22 @@ db_user_mod_enable(struct kreq *r,
 	ksql_stmt_free(stmt);
 	kutil_info(r, u->email, "%s user: %" PRId64, 
 		enable ? "enabled" : "disabled", userid);
+}
+
+static void
+db_mod_meta_title(struct kreq *r, 
+	const struct user *u, const char *title)
+{
+	struct ksqlstmt	*stmt;
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_META_MOD_TITLE], 
+		STMT_META_MOD_TITLE);
+	ksql_bind_int(stmt, 0, time(NULL));
+	bind_if_not_null(stmt, 1, title);
+	ksql_stmt_step(stmt);
+	ksql_stmt_free(stmt);
+	kutil_info(r, u->email, "changed meta title");
 }
 
 static void
@@ -1052,6 +1095,16 @@ sendmodlink(struct kreq *r, const struct user *u)
 }
 
 static void
+sendmodmetatitle(struct kreq *r, const struct user *u)
+{
+	struct kpair	*kp;
+
+	kp = r->fieldmap[KEY_TITLE];
+	db_mod_meta_title(r, u, NULL == kp ? "" : kp->parsed.s);
+	sendhttp(r, KHTTP_200);
+}
+
+static void
 sendmodcloud(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kpn, *kpk, *kps, *kpp;
@@ -1148,12 +1201,23 @@ sendindex(struct kreq *r, const struct user *u)
 	size_t		 i;
 	struct user	 user;
 	struct entry	 entry;
+	struct meta	 meta;
 
 	assert(NULL != u);
 	sendhttp(r, KHTTP_200);
 	kjson_open(&req, r);
 	kjson_obj_open(&req);
 	json_putuser(&req, u, 0);
+
+	if (USER_ADMIN & u->flags) {
+		db_meta_get(r, &meta);
+		kjson_objp_open(&req, "meta");
+		kjson_putstringp(&req, "title",
+			NULL == meta.title ? "" : meta.title);
+		kjson_obj_close(&req);
+		db_meta_unfill(&meta);
+	} else
+		kjson_putnullp(&req, "meta");
 
 	kjson_arrayp_open(&req, "users");
 	if (USER_ADMIN & u->flags) {
@@ -1205,8 +1269,6 @@ sendindex(struct kreq *r, const struct user *u)
 	kjson_close(&req);
 }
 
-
-#if 0
 static void
 sendatom(struct kreq *r)
 {
@@ -1215,10 +1277,10 @@ sendatom(struct kreq *r)
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 i;
-	char		 buf[32];
-	int64_t		 mtime;
+	char		 buf[128];
+	struct meta	 meta;
 
-	mtime = db_meta_get(r);
+	db_meta_get(r, &meta);
 
 	sendhttp(r, KHTTP_200);
 
@@ -1230,9 +1292,20 @@ sendatom(struct kreq *r)
 	kxml_pushattrs(&req, XML_FEED, "xmlns", 
 		"http://www.w3.org/2005/Atom", NULL);
 
-	kutil_epoch2utcstr(mtime, buf, sizeof(buf));
+	kutil_epoch2utcstr(meta.mtime, buf, sizeof(buf));
 	kxml_push(&req, XML_UPDATED);
 	kxml_puts(&req, buf);
+	kxml_pop(&req);
+
+	kxml_push(&req, XML_ID);
+	kxml_puts(&req, r->host);
+	kxml_pop(&req);
+
+	kxml_push(&req, XML_TITLE);
+	if (NULL == meta.title || '\0' == meta.title[0])
+		kxml_puts(&req, r->host);
+	else
+		kxml_puts(&req, meta.title);
 	kxml_pop(&req);
 
 	while (KSQL_ROW == ksql_stmt_step(stmt)) {
@@ -1242,6 +1315,12 @@ sendatom(struct kreq *r)
 		db_entry_fill(&entry, stmt, &i);
 		kxml_push(&req, XML_TITLE);
 		kxml_puts(&req, entry.title);
+		kxml_pop(&req);
+
+		snprintf(buf, sizeof(buf),
+			"tag:%s:%" PRId64, r->host, entry.id);
+		kxml_push(&req, XML_ID);
+		kxml_puts(&req, buf);
 		kxml_pop(&req);
 
 		kutil_epoch2utcstr(entry.ctime, buf, sizeof(buf));
@@ -1276,8 +1355,8 @@ sendatom(struct kreq *r)
 
 	kxml_close(&req);
 	ksql_stmt_free(stmt);
+	db_meta_unfill(&meta);
 }
-#endif
 
 static void
 sendpublic(struct kreq *r, const struct user *u)
@@ -1293,9 +1372,9 @@ sendpublic(struct kreq *r, const struct user *u)
 	char		 buf[64];
 	int		 omtime = 0;
 	const char	*lang;
-	int64_t		 mtime;
+	struct meta	 meta;
 
-	mtime = db_meta_get(r);
+	db_meta_get(r, &meta);
 
 	/* Should we order by mtime instead of the default? */
 
@@ -1363,7 +1442,7 @@ sendpublic(struct kreq *r, const struct user *u)
 		if (first) {
 			first = 0;
 			snprintf(buf, sizeof(buf), 
-				"\"%" PRId64 "\"", mtime);
+				"\"%" PRId64 "\"", meta.mtime);
 			if (NULL != kr && 
 			    0 == strcmp(buf, kr->val)) {
 				sendhttp(r, KHTTP_304);
@@ -1397,6 +1476,7 @@ sendpublic(struct kreq *r, const struct user *u)
 	kjson_array_close(&req);
 	kjson_obj_close(&req);
 	kjson_close(&req);
+	db_meta_unfill(&meta);
 }
 
 static void
@@ -1527,12 +1607,10 @@ main(void)
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
 	} else if (PAGE__MAX == r.page || 
-	           KMIME_APP_JSON != r.mime) {
-#if 0
-		   && PAGE_ATOM != r.page) ||
+		   (KMIME_APP_JSON != r.mime && 
+		    PAGE_ATOM != r.page) ||
 		   (KMIME_TEXT_XML != r.mime &&
 		    PAGE_ATOM == r.page)) {
-#endif
 		sendhttp(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
@@ -1566,9 +1644,7 @@ main(void)
 
 	if (PAGE_LOGIN != r.page &&
 	    PAGE_PUBLIC != r.page && 
-#if 0
 	    PAGE_ATOM != r.page && 
-#endif
 	    NULL == u) {
 		sendhttp(&r, KHTTP_403);
 		khttp_free(&r);
@@ -1577,6 +1653,7 @@ main(void)
 	}
 
 	if ((PAGE_ADD_USER == r.page ||
+	     PAGE_MOD_META_TITLE == r.page ||
 	     PAGE_MOD_ENABLE == r.page) &&
 	    (NULL == u || ! (USER_ADMIN & u->flags))) {
 		sendhttp(&r, KHTTP_404);
@@ -1599,11 +1676,9 @@ main(void)
 	case (PAGE_ADD_USER):
 		sendadduser(&r, u);
 		break;
-#if 0
 	case (PAGE_ATOM):
 		sendatom(&r);
 		break;
-#endif
 	case (PAGE_INDEX):
 		sendindex(&r, u);
 		break;
@@ -1627,6 +1702,9 @@ main(void)
 		break;
 	case (PAGE_MOD_LINK):
 		sendmodlink(&r, u);
+		break;
+	case (PAGE_MOD_META_TITLE):
+		sendmodmetatitle(&r, u);
 		break;
 	case (PAGE_MOD_NAME):
 		sendmodname(&r, u);

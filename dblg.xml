@@ -199,6 +199,34 @@
 							</button>
 						</div>
 					</form>
+					<p>
+						You can also set (or unset) the blog title.
+						This will show up on its atom feed.
+						If unset, the title will be the hostname.
+					</p>
+					<form id="modmetatitleform" method="post" action="@CGIURI@/modmetatitle.json">
+						<p class="error error400 hide">
+							Incomplete form.
+						</p>
+						<fieldset>
+							<div>
+								<label for="modtitleform-title">Title</label>
+								<div>
+									<input id="modtitleform-title" type="text" name="title" />
+								</div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-edit"></i>
+								Modify
+							</button>
+							<button type="button" disabled="disabled" class="pending hide">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Modifying...
+							</button>
+						</div>
+					</form>
 				</div>
 				<div id="usermod">
 					<form id="modpassform" method="post" action="@CGIURI@/modpass.json">

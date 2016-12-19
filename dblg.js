@@ -443,6 +443,8 @@
 	{
 		var sub, e, i, cln;
 
+		attr('modtitleform-title', 'value', res.meta.title);
+
 		if (res.users.length < 2) {
 			hide('userlist');
 			show('nouserlist');
@@ -735,6 +737,7 @@
 		find('modemailform').onsubmit = modemail;
 		find('modnameform').onsubmit = modname;
 		find('modcloudform').onsubmit = modcloud;
+		find('modmetatitleform').onsubmit = modmetatitle;
 		find('adduserform').onsubmit = adduser;
 		find('loginform').onsubmit = login;
 		find('submitform').onsubmit = submit;
@@ -833,6 +836,12 @@
 	function modcloud()
 	{
 		return(sendForm(find('modcloudform'), 
+			genericSetup, genericError, reloadSuccess));
+	}
+
+	function modmetatitle()
+	{
+		return(sendForm(find('modmetatitleform'), 
 			genericSetup, genericError, reloadSuccess));
 	}
 

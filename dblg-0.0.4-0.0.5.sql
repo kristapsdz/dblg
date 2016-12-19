@@ -1,0 +1,1 @@
+ALTER TABLE meta ADD COLUMN title TEXT;
