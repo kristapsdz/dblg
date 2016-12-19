@@ -1277,7 +1277,7 @@ sendatom(struct kreq *r)
 	struct entry	 entry;
 	struct user	 user;
 	size_t		 i;
-	char		 buf[128];
+	char		 buf[256];
 	struct meta	 meta;
 
 	db_meta_get(r, &meta);
@@ -1297,8 +1297,10 @@ sendatom(struct kreq *r)
 	kxml_puts(&req, buf);
 	kxml_pop(&req);
 
+	snprintf(buf, sizeof(buf), "%s://%s",
+		kschemes[r->scheme], r->host);
 	kxml_push(&req, XML_ID);
-	kxml_puts(&req, r->host);
+	kxml_puts(&req, buf);
 	kxml_pop(&req);
 
 	kxml_push(&req, XML_TITLE);
