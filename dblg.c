@@ -1279,6 +1279,7 @@ sendatom(struct kreq *r)
 	size_t		 i;
 	char		 buf[256];
 	struct meta	 meta;
+	struct tm	 tm;
 
 	db_meta_get(r, &meta);
 
@@ -1297,7 +1298,7 @@ sendatom(struct kreq *r)
 	kxml_puts(&req, buf);
 	kxml_pop(&req);
 
-	snprintf(buf, sizeof(buf), "%s://%s",
+	snprintf(buf, sizeof(buf), "%s://%s/",
 		kschemes[r->scheme], r->host);
 	kxml_push(&req, XML_ID);
 	kxml_puts(&req, buf);
@@ -1319,8 +1320,11 @@ sendatom(struct kreq *r)
 		kxml_puts(&req, entry.title);
 		kxml_pop(&req);
 
+		KUTIL_EPOCH2TM(entry.ctime, &tm);
+
 		snprintf(buf, sizeof(buf),
-			"tag:%s:%" PRId64, r->host, entry.id);
+			"tag:%s,%.4d-%.2d-%.2d:%" PRId64, r->host, 
+			tm.tm_year + 1900, tm.tm_mon, tm.tm_mday, entry.id);
 		kxml_push(&req, XML_ID);
 		kxml_puts(&req, buf);
 		kxml_pop(&req);
