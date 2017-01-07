@@ -228,11 +228,19 @@
 
 			if (res.entries[i].aside.length)
 				cln.classList.add('blog-has-aside');
+
 			if (res.entries[i].image.length)
 				cln.classList.add('blog-has-image');
+
 			if (res.entries[i].aside.length &&
 			    res.entries[i].image.length)
 				cln.classList.add('blog-has-image-aside');
+			if (res.entries[i].aside.length &&
+			    0 === res.entries[i].image.length)
+				cln.classList.add('blog-has-only-aside');
+			if (0 === res.entries[i].aside.length &&
+			    res.entries[i].image.length)
+				cln.classList.add('blog-has-only-image');
 
 			repl(cln, 'blog-ctime', moment.unix
 				(res.entries[i].ctime).calendar());
