@@ -201,7 +201,7 @@
 					</form>
 					<p>
 						You can also set (or unset) the blog title.
-						This will show up on its atom feed.
+						This will show up on its <a href="@CGIURI@/atom.xml">Atom feed</a>.
 						If unset, the title will be the hostname.
 					</p>
 					<form id="modmetatitleform" method="post" action="@CGIURI@/modmetatitle.json">
