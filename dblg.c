@@ -1304,6 +1304,10 @@ sendatom(struct kreq *r)
 	kxml_puts(&req, buf);
 	kxml_pop(&req);
 
+	snprintf(buf, sizeof(buf), "%s%s", r->pname, r->fullpath);
+	kxml_pushnullattrs(&req, XML_LINK, 
+		"rel", "self", "href", buf, NULL);
+
 	kxml_push(&req, XML_TITLE);
 	if (NULL == meta.title || '\0' == meta.title[0])
 		kxml_puts(&req, r->host);
