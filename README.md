@@ -14,8 +14,8 @@ It has three components:
 [dblg.c](dblg.c).  It links to [kcgi](https://kristaps.bsd.lv/kcgi) and
 [ksql](https://kristaps.bsd.lv/ksql), and uses
 [SQLite](https://sqlite.org) for its backing store.  It produces JSON
-objects, so it can be driven by any front-end conforming to its
-expectations.
+objects or an Atom feed (experimental!), so it can be driven by any front-end conforming
+to its expectations.
 
 2. An editing front-end, [dblg.xml](dblg.xml), [dblg.css](dblg.css), and
 [dblg.js](dblg.js).  This part drives the back-end by providing an
@@ -54,6 +54,7 @@ Some features:
 - Strong HTTP caching with etags, full compression support.
 - Security: cookies with security extensions and full support for CSP
   (no in-line JavaScript)
+- Atom feed support (experimental!).
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
 formatting dates, [clipboard.js](https://clipboardjs.com/) for copying
