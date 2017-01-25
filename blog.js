@@ -159,6 +159,36 @@
 		}
 	}
 
+	/*
+	 * Either populate a formatted calendar date (moment.js) or the
+	 * raw date from the native functions.
+	 */
+	function abscal(node, cls, epoch)
+	{
+		var str, d;
+
+		if (typeof moment === 'undefined') {
+			d = new Date();
+			d.setTime(epoch * 1000);
+			str = d.toDateString();
+		} else
+			str = moment.unix(epoch).calendar();
+
+		repl(node, cls, str);
+	}
+
+	/*
+	 * Either populate HTML-ised markdown (if a showdown.js
+	 * converter exists) or the raw markdown content otherwise.
+	 */
+	function markdown(node, cls, conv, md)
+	{
+		if (null !== conv)
+			replhtml(node, cls, conv.makeHtml(md));
+		else
+			repl(node, cls, md);
+	}
+
 	function parser(resp)
 	{
 		var res;
@@ -286,10 +316,11 @@
 			    res.entries[i].image.length)
 				cln.classList.add('blog-has-only-image');
 
-			repl(cln, 'blog-ctime', moment.unix
-				(res.entries[i].ctime).calendar());
-			repl(cln, 'blog-mtime', moment.unix
-				(res.entries[i].mtime).calendar());
+			abscal(cln, 'blog-ctime', 
+				res.entries[i].ctime);
+			abscal(cln, 'blog-mtime', 
+				res.entries[i].mtime);
+
 			if (res.entries[i].mtime !== 
 			    res.entries[i].ctime) {
 				hidec(cln, 'blog-ctime-box');
@@ -299,27 +330,43 @@
 				hidec(cln, 'blog-mtime-box');
 			}
 
-			attr(cln, 'blog-image', 'src', 
-				res.entries[i].image);
+			if (null !== res.entries[i].image &&
+			    res.entries[i].image.length) {
+				showc(cln, 'blog-image-box');
+				attr(cln, 'blog-image', 'src', 
+					res.entries[i].image);
+				attr(cln, 'blog-image-link', 'href', 
+					res.entries[i].image);
+			} else {
+				hidec(cln, 'blog-image-box');
+				rattr(cln, 'blog-image', 'src');
+				rattr(cln, 'blog-image-link', 'href');
+			}
 
 			repl(cln, 'blog-author', 
 				res.entries[i].user.name);
-			if (null !== res.entries[i].user.link)
-				attr(cln, 'blog-author', 'href', 
+
+			if (null !== res.entries[i].user.link &&
+			    res.entries[i].user.link.length) 
+				attr(cln, 'blog-author-link', 'href', 
 					res.entries[i].user.link);
 			else
-				rattr(cln, 'blog-author', 'href');
+				rattr(cln, 'blog-author-link', 'href');
+
 			repl(cln, 'blog-title', 
 				res.entries[i].title);
-			attr(cln, 'blog-title', 'href', 
-				'blog.html?entryid=' + 
-				res.entries[i].id);
 
 			if (null !== options.blog) {
-				showc(cln, 'blog-canonlink');
-				attr(cln, 'blog-canonlink', 'href',
+				showc(cln, 'blog-canon-box');
+				attr(cln, 'blog-canon-link', 'href',
 					options.blog + '?entryid=' + 
 					res.entries[i].id);
+			} else {
+				hidec(cln, 'blog-canon-box');
+				rattr(cln, 'blog-canon-link', 'href');
+			}
+
+			if (null !== options.blog) {
 				showc(cln, 'blog-facebooklink');
 				attr(cln, 'blog-facebooklink', 
 					'data-href',
@@ -329,24 +376,13 @@
 					'data-numposts', 
 					(sz > 1 ? '2' : '20'));
 			} else {
-				hidec(cln, 'blog-canonlink');
 				hidec(cln, 'blog-facebooklink');
 			}
 
-			res.entries[i].contenthtml = null !== conv ?
-				conv.makeHtml(res.entries[i].content) :
-				null;
-			res.entries[i].asidehtml = null !== conv && 
-				res.entries[i].aside.length ?
-				conv.makeHtml(res.entries[i].aside) :
-				null;
-
-			if (null !== res.entries[i].contenthtml)
-				replhtml(cln, 'blog-content', 
-					res.entries[i].contenthtml);
-			if (null !== res.entries[i].asidehtml)
-				replhtml(cln, 'blog-aside', 
-					res.entries[i].asidehtml);
+			markdown(cln, 'blog-content',
+				conv, res.entries[i].content);
+			markdown(cln, 'blog-aside',
+				conv, res.entries[i].aside);
 
 			if (null !== res.entries[i].coords) {
 				showc(cln, 'blog-coords');
