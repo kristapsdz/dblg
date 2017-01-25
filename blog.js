@@ -458,6 +458,9 @@
 				}
 			}, 1);
 		}
+
+		if (null !== options.postload)
+			options.postload();
 	}
 
 	function loadSetup()
@@ -502,6 +505,9 @@
 			options.rescroll = 
 				(typeof opts.rescroll === 'boolean') ? 
 				opts.rescroll : false;
+			options.postload = 
+				(typeof opts.postload !== 'undefined') ? 
+				opts.postload : null;
 		} else {
 			options.entryid = null;
 			options.editor = null;
@@ -510,6 +516,7 @@
 			options.lang = null;
 			options.order = null;
 			options.rescroll = false;
+			options.postload = null;
 		}
 
 		query = '';
