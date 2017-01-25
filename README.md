@@ -14,8 +14,8 @@ It has three components:
 [dblg.c](dblg.c).  It links to [kcgi](https://kristaps.bsd.lv/kcgi) and
 [ksql](https://kristaps.bsd.lv/ksql), and uses
 [SQLite](https://sqlite.org) for its backing store.  It produces JSON
-objects or an Atom feed (experimental!), so it can be driven by any front-end conforming
-to its expectations.
+objects or an Atom feed (**experimental**), so it can be driven by any
+front-end conforming to its expectations.
 
 2. An editing front-end, [dblg.xml](dblg.xml), [dblg.css](dblg.css), and
 [dblg.js](dblg.js).  This part drives the back-end by providing an
@@ -54,7 +54,7 @@ Some features:
 - Strong HTTP caching with etags, full compression support.
 - Security: cookies with security extensions and full support for CSP
   (no in-line JavaScript)
-- Atom feed support (experimental!).
+- Atom feed support (**experimental**).
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
 formatting dates, [clipboard.js](https://clipboardjs.com/) for copying
@@ -62,7 +62,8 @@ to the clipboard (apparently this is hard?), and
 [js-sha1](https://github.com/emn178/js-sha1) for SHA1 hashing the cloud
 authorisation.
 
-The default viewer uses [moment.js](http://momentjs.com/) and
+The default viewer optionally (but *strongly* recommended) uses
+[moment.js](http://momentjs.com/) and
 [showdown](https://github.com/showdownjs/showdown) for formatting
 MarkDown.
 
@@ -134,14 +135,83 @@ The `url` argument is the URL of the blog CGI script.  The `options`
 dictionary is optional and may consist of any or all of the following
 optional values:
 
-- `editor`: string pointing to the editor URL (no editor, if null)
-- `limit`: an integer limiting the number of pulled articles (else all)
 - `blog`: the URL for the blog page
-- `lang`: a string limiting the languages of pulled articles
-- `order`: a string of either `ctime` or `mtime` being the default sort
-  order of pulled articles
+- `editor`: string pointing to the editor URL (no editor, if null)
 - `entryid`: an integer that's the unique identifier of a specific entry
   to pull down (if unspecified, this is checked in the query string)
+- `lang`: a string limiting the languages of pulled articles
+- `limit`: an integer limiting the number of pulled articles (else all)
+- `order`: a string of either `ctime` or `mtime` being the default sort
+  order of pulled articles
+- `postload`: a function that is invoked after all processing has been
+  done after successfully downloading and parsing the results
+- `rescroll`: a Boolean indicating that if there's a document hash,
+  re-scroll to that hash after loading the page (and before `postload`)
+
+The `blogclient` function asynchronously manipulates the DOM tree within
+and including the `blog` identifier, the root element that (obviously)
+should be included somewhere in the calling page.  When `blogclient` is
+invoked, it synchronously adds the `hide` attribute to the root element
+before starting asynchronously downloading blog content.
+
+Upon success, the child of this element is removed, cloned, and
+replicated for each blog element shown on the page.
+
+```html
+<div id="blog">
+  <div>
+    <!-- This is duplicated and filled in for each entry. -->
+    <!-- Node manipulation happens over "class" attributes. -->
+  </div>
+</div>
+```
+
+Within the root element, the following classes have their contents
+replaced by content.  Note that *calendar form* refers to using 
+[moment.js](http://momentjs.com/)'s `calendar()` function, if found, or
+simply a generic date string otherwise.  Note also that *markdown*
+refers to HTML-ised markdown if
+[showdown](https://github.com/showdownjs/showdown) is loaded, or the raw
+markdown otherwise.
+
+- `blog-ctime`: calendar form of entry creation time
+- `blog-mtime`: calendar form of entry update time, which is initialised
+  to entry creation time
+- `blog-author`: name of blog entry author
+- `blog-title`: title of blog entry
+- `blog-aside`: article synopsis markdown content
+- `blog-content`: article content markdown content
+
+Furthermore, the following element attributes are set or unset.
+
+- `blog-author-link`: if provided, `href` is set to the author's link;
+  otherwise, the `href` attribute is removed
+- `blog-canon-link`: if a `blog` argument is provided to the
+  `blogclient` configuration object, `href` is set to that and the
+  `?entryid=nnn` parameter; otherwise, the `href` attribute is removed
+- `blog-coords`: if coordinates are provided, sets `href` to a Google
+  maps link (in satellite mode) of the coordinates; otherwise, the
+  `href` is removed
+- `blog-fb-link`: if the `blog` argument is provided to the
+  `blogclient` configuration object, `data-href` is set to the canonical
+  blog link and `data-numposts` also set; otherwise, they are removed
+- `blog-image`: if provided, `src` is set to the image link; otherwise,
+  the `src` attribute is removed
+- `blog-image-link`: if provided, `href` is set to the image link;
+  otherwise, the `href` attribute is removed
+
+The following have the `hide` attribute ("hidden") set on the containing
+element given the noted conditions.
+
+- `blog-canon-box`: hidden if a `blog` argument is not provided to the
+  `blogclient` configuration object
+- `blog-coords-box`: hidden if there are no coordinates
+- `blog-ctime-box`: hidden if there is a modification time
+- `blog-image-box`: hidden if there is no image
+- `blog-mtime-box`: hidden if there is *not* a modification time
+
+After filling in these fields for each blog entry, the `hide` class is
+removed from the root element.
 
 ## License
 
