@@ -442,15 +442,22 @@
 
 		show(e);
 
-		/*if (document.location.hash &&
-		    '' !== document.location.hash) {
+		/* Re-scroll us, if requested. */
+
+		if (options.rescroll &&
+		    null !== window.location.hash &&
+		    '' !== window.location.hash) {
+			console.log('scrolling: ' + 
+				window.location.hash);
 			setTimeout(function() {
-				if (location.hash) {
+				if (null !== window.location.hash &&
+				    '' !== window.location.hash) {
 					window.scrollTo(0, 0);
-					window.location.href = hash;
+					window.location.href = 
+						window.location.hash;
 				}
 			}, 1);
-		}*/
+		}
 	}
 
 	function loadSetup()
@@ -461,18 +468,10 @@
 	/*
 	 * Function asynchronously invokes the dblg blog at "uri" with
 	 * the given options dictionary "opts".
-	 * The options consist of all optional values: "editor", a
-	 * string pointing to the editor URI (no editor, if null);
-	 * "limit", an integer limiting the number of pulled articles
-	 * (else all); "blog", the URI string for the blog page; "lang",
-	 * a string limiting the languages of pulled articles; and
-	 * "order", a string of either "ctime" or "mtime" being the
-	 * default sort order of pulled articles.
-	 *
-	 * Lastly, the query string is scanned for "entryid" integer,
-	 * which is also appended to the request variable to limit the
-	 * blog access.  This can be overridden by the "entryid" value
-	 * passed into the "opts" dictionary.
+	 * The query string is scanned for "entryid" integer, which is
+	 * also appended to the request variable to limit the blog
+	 * access.  This can be overridden by the "entryid" value passed
+	 * into the "opts" dictionary.
 	 */
 	function blogclient(uri, opts)
 	{
@@ -500,6 +499,9 @@
 			options.order = 
 				(typeof opts.order === 'string') ? 
 				opts.order : null;
+			options.rescroll = 
+				(typeof opts.rescroll === 'boolean') ? 
+				opts.rescroll : false;
 		} else {
 			options.entryid = null;
 			options.editor = null;
@@ -507,6 +509,7 @@
 			options.blog = null;
 			options.lang = null;
 			options.order = null;
+			options.rescroll = false;
 		}
 
 		query = '';
