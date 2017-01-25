@@ -367,16 +367,14 @@
 			}
 
 			if (null !== options.blog) {
-				showc(cln, 'blog-facebooklink');
-				attr(cln, 'blog-facebooklink', 
-					'data-href',
+				attr(cln, 'blog-fb-link', 'data-href',
 					options.blog + '?entryid=' + 
 					res.entries[i].id);
-				attr(cln, 'blog-facebooklink',
-					'data-numposts', 
+				attr(cln, 'blog-fb-link', 'data-numposts', 
 					(sz > 1 ? '2' : '20'));
 			} else {
-				hidec(cln, 'blog-facebooklink');
+				rattr(cln, 'blog-fb-link', 'data-href');
+				rattr(cln, 'blog-fb-link', 'data-numposts');
 			}
 
 			markdown(cln, 'blog-content',
@@ -385,14 +383,18 @@
 				conv, res.entries[i].aside);
 
 			if (null !== res.entries[i].coords) {
-				showc(cln, 'blog-coords');
+				showc(cln, 'blog-coords-box');
 				attr(cln, 'blog-coords', 'href',
 					'https://maps.google.com/?t=k&q=' + 
 					res.entries[i].coords.lat + ',' + 
 					res.entries[i].coords.lng + 
 					'&zoom=13&sensor=false');
-			} else
-				hidec(cln, 'blog-coords');
+			} else {
+				hidec(cln, 'blog-coords-box');
+				rattr(cln, 'blog-coords', 'href');
+			}
+
+			/* FIXME: not yet documented. */
 
 			if (null !== res.user &&
 			    res.user.id === res.entries[i].user.id) {
