@@ -20,6 +20,11 @@
 	var options = null;
 	var cgiuri = null;
 
+	/*
+	 * Asynchronously download content from url.
+	 * Invokes the setup, error, and success functions depending
+	 * upon the state.
+	 */
 	function sendQuery(url, setup, error, success) 
 	{
 		var xmh = new XMLHttpRequest();
@@ -168,6 +173,16 @@
 		return(res);
 	}
 
+	/*
+	 * The following functions (removebtnSetup, removebtnError,
+	 * removebtnuncheck, removebtncheck, removebtn) all relate to
+	 * invoking the "delete" button on a blog entry.
+	 * Obviously this is only available to the owner, but that's
+	 * managed server side.
+	 * The purpose of the complexity is to have an "are you sure"
+	 * prompt printed before the removal.
+	 */
+
 	function removebtnSetup(e)
 	{
 		showc(e, 'blog-delete-pending');
@@ -202,25 +217,54 @@
 			function() { location.href='index.html'; });
 	}
 
+	/*
+	 * Blog entries were downloaded properly.
+	 * Parse and process.
+	 */
 	function loadSuccess(resp)
 	{
 		var res = parser(resp);
 		var e, sub, cln, list, i, j, sz, conv;
 
-		if (null === res)
+		/* Something went wrong in parsing our JSON. */
+
+		if (null === res) {
+			console.log('bailing: no parsed JSON');
 			return;
+		}
+
+		/* If defined, get our Markdown converter. */
 
 		if (typeof showdown !== 'undefined')
 			conv = new showdown.Converter();
 		else
 			conv = null;
-		e = find('blog');
-		sub = e.children[0];
+
+		/* Get the node we'll clone and repeat. */
+
+		if (null === (e = find('blog'))) {
+			console.log('bailing: no root blog element');
+			return;
+		} else if (null === (sub = e.children[0])) {
+			console.log('bailing: no root blog element child');
+			return;
+		}
+
 		e.removeChild(sub);
 
+		/*
+		 * Configure the number of elements we'll show.
+		 * We just take the number that the server gave us and
+		 * cut it by the limit.
+		 * Note: we shouldn't have more than the number of
+		 * requested elements!
+		 */
+
 		sz = res.entries.length;
-		if (null !== options.limit && sz > options.limit)
+		if (null !== options.limit && sz > options.limit) {
+			console.log('warning: more blog entries than requested');
 			sz = options.limit;
+		}
 
 		for (i = 0; i < sz; i++) {
 			cln = sub.cloneNode(true);
@@ -357,8 +401,18 @@
 			} else
 				hidec(cln, 'blog-control');
 		}
+
 		show(e);
-		show('blog');
+
+		/*if (document.location.hash &&
+		    '' !== document.location.hash) {
+			setTimeout(function() {
+				if (location.hash) {
+					window.scrollTo(0, 0);
+					window.location.href = hash;
+				}
+			}, 1);
+		}*/
 	}
 
 	function loadSetup()
@@ -434,7 +488,7 @@
 				'entryid=' + options.entryid;
 		if (null !== options.order)
 			query += (0 === query.length ? '?' : '&') +
-				'limit=' + options.order;
+				'order=' + options.order;
 		if (null !== options.limit)
 			query += (0 === query.length ? '?' : '&') +
 				'limit=' + options.limit;
