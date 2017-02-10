@@ -11,6 +11,13 @@ CREATE TABLE meta (
 	-- This is used in the Atom feed for reporting the title.
 	-- If unspecified, it will be set to the hostname.
 	title TEXT,
+	-- Template for providing static web pages.
+	-- If this is not NULL, requests to the "public" resources using
+	-- the text/html MIME type will consider this a template file
+	-- relative to the file-system root.
+	-- If unspecifie,d requests to the text/html MIME type will
+	-- return an HTTP error 404.
+	static TEXT,
 	-- Used to make sure there's only one row.
 	-- DO NOT set this value to non-zero.
 	lock INTEGER NOT NULL DEFAULT(0),
