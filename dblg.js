@@ -444,6 +444,7 @@
 		var sub, e, i, cln;
 
 		attr('modtitleform-title', 'value', res.meta.title);
+		attr('modtemplateform-template', 'value', res.meta.template);
 
 		if (res.users.length < 2) {
 			hide('userlist');
@@ -738,6 +739,7 @@
 		find('modnameform').onsubmit = modname;
 		find('modcloudform').onsubmit = modcloud;
 		find('modmetatitleform').onsubmit = modmetatitle;
+		find('modmetatemplateform').onsubmit = modmetatemplate;
 		find('adduserform').onsubmit = adduser;
 		find('loginform').onsubmit = login;
 		find('submitform').onsubmit = submit;
@@ -836,6 +838,12 @@
 	function modcloud()
 	{
 		return(sendForm(find('modcloudform'), 
+			genericSetup, genericError, reloadSuccess));
+	}
+
+	function modmetatemplate()
+	{
+		return(sendForm(find('modmetatemplateform'), 
 			genericSetup, genericError, reloadSuccess));
 	}
 

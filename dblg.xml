@@ -212,7 +212,39 @@
 							<div>
 								<label for="modtitleform-title">Title</label>
 								<div>
-									<input id="modtitleform-title" type="text" name="title" />
+									<input id="modtitleform-title" type="text" name="mtitle" />
+								</div>
+							</div>
+						</fieldset>
+						<div class="buttons">
+							<button type="submit" class="submit">
+								<i class="fa fa-fw fa-edit"></i>
+								Modify
+							</button>
+							<button type="button" disabled="disabled" class="pending hide">
+								<i class="fa fa-fw fa-pulse fa-spinner"></i>
+								Modifying...
+							</button>
+						</div>
+					</form>
+					<p>
+						If you'd like <span class="nm">dblg</span> to serve static HTML blog content, 
+						write your template filename here.
+						This file is relative to the root directory of your web server, which on OpenBSD is often
+						<i>/var/www</i>.
+						If unset, static HTML blog content will not be served.
+						<strong>Warning</strong>: if the file doesn't exist or you don't have permission, navigating to
+						the page will produce no content.
+					</p>
+					<form id="modmetatemplateform" method="post" action="@CGIURI@/modmetatemplate.json">
+						<p class="error error400 hide">
+							Incomplete form.
+						</p>
+						<fieldset>
+							<div>
+								<label for="modtemplateform-template">Template filename</label>
+								<div>
+									<input id="modtemplateform-template" type="text" name="mtemplate" />
 								</div>
 							</div>
 						</fieldset>

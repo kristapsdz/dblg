@@ -1,6 +1,6 @@
 /*	$Id$ */
 /*
- * Copyright (c) 2016 Kristaps Dzonsons <kristaps@bsd.lv>
+ * Copyright (c) 2016--2017 Kristaps Dzonsons <kristaps@bsd.lv>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -27,6 +27,7 @@
 #include <unistd.h>
 
 #include <kcgi.h>
+#include <kcgihtml.h>
 #include <kcgijson.h>
 #include <kcgixml.h>
 #include <ksql.h>
@@ -50,25 +51,128 @@ enum	xml {
 };
 
 /*
- * Element names of atom feed XML.
+ * The elements in our HTML template file.
  */
-static	const char *xmls[XML__MAX] = {
-	"author", /* XML_AUTHOR */
-	"email", /* XML_EMAIL */
-	"entry", /* XML_ENTRY */
-	"feed", /* XML_FEED */
-	"id", /* XML_ID */
-	"link", /* XML_LINK */
-	"name", /* XML_NAME */
-	"published", /* XML_PUBLISHED */
-	"title", /* XML_TITLE */
-	"updated", /* XML_UPDATED */
-	"uri", /* XML_URI */
+enum	templ {
+	TEMPL_ASIDE,
+	TEMPL_AUTHOR_LINK,
+	TEMPL_AUTHOR_NAME,
+	TEMPL_CANON,
+	TEMPL_CLASSES,
+	TEMPL_CONTENT,
+	TEMPL_COORD_LAT_DECIMAL,
+	TEMPL_COORD_LNG_DECIMAL,
+	TEMPL_CTIME,
+	TEMPL_CTIME_ISO_8601,
+	TEMPL_IMAGE,
+	TEMPL_MTIME,
+	TEMPL_MTIME_ISO_8601,
+	TEMPL_TITLE,
+	TEMPL__MAX
+};
+
+/*
+ * Page (URL) designations.
+ */
+enum	page {
+	PAGE_ADD_USER,
+	PAGE_ATOM,
+	PAGE_INDEX,
+	PAGE_LOGIN,
+	PAGE_LOGOUT,
+	PAGE_MOD_CLOUD,
+	PAGE_MOD_EMAIL,
+	PAGE_MOD_ENABLE,
+	PAGE_MOD_LANG,
+	PAGE_MOD_LINK,
+	PAGE_MOD_META_TEMPLATE,
+	PAGE_MOD_META_TITLE,
+	PAGE_MOD_NAME,
+	PAGE_MOD_PASS,
+	PAGE_PUBLIC,
+	PAGE_REMOVE,
+	PAGE_SUBMIT,
+	PAGE__MAX
+};
+
+/*
+ * Form input names.
+ */
+enum	key {
+	KEY_ADMIN,
+	KEY_ASIDE,
+	KEY_CLOUDKEY,
+	KEY_CLOUDNAME,
+	KEY_CLOUDPATH,
+	KEY_CLOUDSECRET,
+	KEY_EMAIL,
+	KEY_ENABLE,
+	KEY_ENTRYID,
+	KEY_IMAGE,
+	KEY_LANG,
+	KEY_LATITUDE,
+	KEY_LONGITUDE,
+	KEY_LIMIT,
+	KEY_LINK,
+	KEY_MARKDOWN,
+	KEY_META_TEMPLATE,
+	KEY_META_TITLE,
+	KEY_NAME,
+	KEY_ORDER,
+	KEY_PASS,
+	KEY_SAVE,
+	KEY_SESSCOOKIE,
+	KEY_SESSID,
+	KEY_TITLE,
+	KEY_USERID,
+	KEY__MAX
+};
+
+/*
+ * SQL statements.
+ */
+enum	stmt {
+	STMT_ENTRY_DELETE,
+	STMT_ENTRY_GET,
+	STMT_ENTRY_GET_PUBLIC,
+	STMT_ENTRY_LIST_PENDING,
+	STMT_ENTRY_LIST_PUBLIC,
+	STMT_ENTRY_LIST_PUBLIC_LANG,
+	STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT,
+	STMT_ENTRY_LIST_PUBLIC_LIMIT,
+	STMT_ENTRY_LIST_PUBLIC_MTIME,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT,
+	STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT,
+	STMT_ENTRY_MODIFY,
+	STMT_ENTRY_NEW,
+	STMT_META_GET,
+	STMT_META_MOD_TEMPLATE,
+	STMT_META_MOD_TITLE,
+	STMT_META_NEW,
+	STMT_META_UPDATE,
+	STMT_SESS_DEL,
+	STMT_SESS_GET,
+	STMT_SESS_NEW,
+	STMT_USER_ADD,
+	STMT_USER_GET,
+	STMT_USER_LIST,
+	STMT_USER_LOOKUP,
+	STMT_USER_MOD_CLOUD,
+	STMT_USER_MOD_DISABLE,
+	STMT_USER_MOD_EMAIL,
+	STMT_USER_MOD_ENABLE,
+	STMT_USER_MOD_HASH,
+	STMT_USER_MOD_LANG,
+	STMT_USER_MOD_LINK,
+	STMT_USER_MOD_NAME,
+	STMT__MAX
 };
 
 struct	meta {
 	int64_t	 mtime; /* last modified time */
-	char	*title; /* title (or NULL) */
+	char	*title; /* Atom title (or NULL) */
+	char	*template; /* HTML template (or NULL) */
 };
 
 struct	cloud {	       
@@ -107,89 +211,48 @@ struct	entry {
 	int64_t		 id;
 };
 
-enum	page {
-	PAGE_ADD_USER,
-	PAGE_ATOM,
-	PAGE_INDEX,
-	PAGE_LOGIN,
-	PAGE_LOGOUT,
-	PAGE_MOD_CLOUD,
-	PAGE_MOD_EMAIL,
-	PAGE_MOD_ENABLE,
-	PAGE_MOD_LANG,
-	PAGE_MOD_LINK,
-	PAGE_MOD_META_TITLE,
-	PAGE_MOD_NAME,
-	PAGE_MOD_PASS,
-	PAGE_PUBLIC,
-	PAGE_REMOVE,
-	PAGE_SUBMIT,
-	PAGE__MAX
+struct	htmldata {
+	const struct user *u; /* owner (or NULL) */
+	struct entry	   entry; /* blog entry */
+	struct user	   user; /* blog user */
+	struct khtmlreq	  *req; /* HTML handle */
 };
 
-enum	key {
-	KEY_ADMIN,
-	KEY_ASIDE,
-	KEY_CLOUDKEY,
-	KEY_CLOUDNAME,
-	KEY_CLOUDPATH,
-	KEY_CLOUDSECRET,
-	KEY_EMAIL,
-	KEY_ENABLE,
-	KEY_ENTRYID,
-	KEY_IMAGE,
-	KEY_LANG,
-	KEY_LATITUDE,
-	KEY_LONGITUDE,
-	KEY_LIMIT,
-	KEY_LINK,
-	KEY_MARKDOWN,
-	KEY_NAME,
-	KEY_ORDER,
-	KEY_PASS,
-	KEY_SAVE,
-	KEY_SESSCOOKIE,
-	KEY_SESSID,
-	KEY_TITLE,
-	KEY_USERID,
-	KEY__MAX
+/*
+ * Element names of atom feed XML.
+ */
+static	const char *xmls[XML__MAX] = {
+	"author", /* XML_AUTHOR */
+	"email", /* XML_EMAIL */
+	"entry", /* XML_ENTRY */
+	"feed", /* XML_FEED */
+	"id", /* XML_ID */
+	"link", /* XML_LINK */
+	"name", /* XML_NAME */
+	"published", /* XML_PUBLISHED */
+	"title", /* XML_TITLE */
+	"updated", /* XML_UPDATED */
+	"uri", /* XML_URI */
 };
 
-enum	stmt {
-	STMT_ENTRY_DELETE,
-	STMT_ENTRY_GET,
-	STMT_ENTRY_GET_PUBLIC,
-	STMT_ENTRY_LIST_PENDING,
-	STMT_ENTRY_LIST_PUBLIC,
-	STMT_ENTRY_LIST_PUBLIC_LANG,
-	STMT_ENTRY_LIST_PUBLIC_LANG_LIMIT,
-	STMT_ENTRY_LIST_PUBLIC_LIMIT,
-	STMT_ENTRY_LIST_PUBLIC_MTIME,
-	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG,
-	STMT_ENTRY_LIST_PUBLIC_MTIME_LANG_LIMIT,
-	STMT_ENTRY_LIST_PUBLIC_MTIME_LIMIT,
-	STMT_ENTRY_MODIFY,
-	STMT_ENTRY_NEW,
-	STMT_META_GET,
-	STMT_META_MOD_TITLE,
-	STMT_META_NEW,
-	STMT_META_UPDATE,
-	STMT_SESS_DEL,
-	STMT_SESS_GET,
-	STMT_SESS_NEW,
-	STMT_USER_ADD,
-	STMT_USER_GET,
-	STMT_USER_LIST,
-	STMT_USER_LOOKUP,
-	STMT_USER_MOD_CLOUD,
-	STMT_USER_MOD_DISABLE,
-	STMT_USER_MOD_EMAIL,
-	STMT_USER_MOD_ENABLE,
-	STMT_USER_MOD_HASH,
-	STMT_USER_MOD_LANG,
-	STMT_USER_MOD_LINK,
-	STMT_USER_MOD_NAME,
-	STMT__MAX
+/*
+ * HTML template key names.
+ */
+static const char *const templs[TEMPL__MAX] = {
+	"dblg-aside", /* TEMPL_ASIDE */
+	"dblg-author-link", /* TEMPL_AUTHOR_LINK */
+	"dblg-author-name", /* TEMPL_AUTHOR_NAME */
+	"dblg-canon", /* TEMPL_CANON */
+	"dblg-classes", /* TEMPL_CLASSES */
+	"dblg-content", /* TEMPL_CONTENT */
+	"dblg-coord-lat-decimal", /* TEMPL_COORD_LAT_DECIMAL */
+	"dblg-coord-lng-decimal", /* TEMPL_COORD_LNG_DECIMAL */
+	"dblg-ctime", /* TEMPL_CTIME */
+	"dblg-ctime-iso8601", /* TEMPL_CTIME_ISO_8601 */
+	"dblg-image", /* TEMPL_IMAGE */
+	"dblg-mtime", /* TEMPL_MTIME */
+	"dblg-mtime-iso8601", /* TEMPL_MTIME_ISO_8601 */
+	"dblg-title", /* TEMPL_TITLE */
 };
 
 #define	USER	"user.id,user.email,user.name,user.link," \
@@ -203,7 +266,7 @@ enum	stmt {
 		"SELECT " USER "," ENTRY " FROM entry " \
 		"INNER JOIN user ON user.id=entry.userid " \
 		"WHERE entry.flags=0 "
-#define META	"meta.mtime,meta.title"
+#define META	"meta.mtime,meta.title,meta.template"
 
 static	const char *const stmts[STMT__MAX] = {
 	/* STMT_ENTRY_DELETE */
@@ -250,12 +313,14 @@ static	const char *const stmts[STMT__MAX] = {
 		"VALUES (?,?,?,?,?,?,?,?,?)",
 	/* STMT_META_GET */
 	"SELECT " META " FROM meta LIMIT 1",
+	/* STMT_META_MOD_TEMPLATE */
+	"UPDATE meta (mtime,template) VALUES (?,?)",
 	/* STMT_META_MOD_TITLE */
-	"INSERT OR REPLACE INTO meta (mtime,title) VALUES (?,?)",
+	"UPDATE meta (mtime,title) VALUES (?,?)",
 	/* STMT_META_NEW */
 	"INSERT INTO meta (mtime) VALUES (?)",
 	/* STMT_META_UPDATE */
-	"INSERT OR REPLACE INTO meta (mtime) VALUES (?)",
+	"UPDATE meta (mtime) VALUES (?)",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -309,6 +374,8 @@ static const struct kvalid keys[KEY__MAX] = {
 	{ kvalid_uint, "limit" }, /* KEY_LIMIT */
 	{ kvalid_string, "link" }, /* KEY_LINK */
 	{ kvalid_stringne, "markdown" }, /* KEY_MARKDOWN */
+	{ kvalid_string, "mtemplate" }, /* KEY_META_TEMPLATE */
+	{ kvalid_string, "mtitle" }, /* KEY_META_TITLE */
 	{ kvalid_stringne, "name" }, /* KEY_NAME */
 	{ kvalid_stringne, "order" }, /* KEY_ORDER */
 	{ kvalid_stringne, "pass" }, /* KEY_PASS */
@@ -330,6 +397,7 @@ static const char *const pages[PAGE__MAX] = {
 	"modenable", /* PAGE_MOD_ENABLE */
 	"modlang", /* PAGE_MOD_LANG */
 	"modlink", /* PAGE_MOD_LINK */
+	"modmetatemplate", /* PAGE_MOD_META_TEMPLATE */
 	"modmetatitle", /* PAGE_MOD_META_TITLE */
 	"modname", /* PAGE_MOD_NAME */
 	"modpass", /* PAGE_MOD_PASS */
@@ -433,8 +501,11 @@ static void
 db_meta_unfill(struct meta *p)
 {
 
-	if (NULL != p)
-		free(p->title);
+	if (NULL == p)
+		return;
+
+	free(p->title);
+	free(p->template);
 }
 
 static void
@@ -447,6 +518,7 @@ db_meta_fill(struct meta *p, struct ksqlstmt *stmt, size_t *pos)
 	memset(p, 0, sizeof(struct meta));
 	p->mtime = ksql_stmt_int(stmt, (*pos)++);
 	col_if_not_null(&p->title, stmt, (*pos)++);
+	col_if_not_null(&p->template, stmt, (*pos)++);
 }
 
 static void
@@ -542,6 +614,12 @@ static void
 db_meta_update(struct kreq *r)
 {
 	struct ksqlstmt	*stmt;
+	struct meta	 p;
+
+	/* Make sure record exists. */
+
+	db_meta_get(r, &p);
+	db_meta_unfill(&p);
 
 	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_META_UPDATE], 
@@ -782,10 +860,39 @@ db_user_mod_enable(struct kreq *r,
 }
 
 static void
+db_mod_meta_template(struct kreq *r, 
+	const struct user *u, const char *template)
+{
+	struct ksqlstmt	*stmt;
+	struct meta	 meta;
+
+	/* Make sure the record exists. */
+
+	db_meta_get(r, &meta);
+	db_meta_unfill(&meta);
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_META_MOD_TEMPLATE], 
+		STMT_META_MOD_TEMPLATE);
+	ksql_bind_int(stmt, 0, time(NULL));
+	bind_if_not_null(stmt, 1, template);
+	ksql_stmt_step(stmt);
+	ksql_stmt_free(stmt);
+	kutil_info(r, u->email, 
+		"changed meta template: %s", template);
+}
+
+static void
 db_mod_meta_title(struct kreq *r, 
 	const struct user *u, const char *title)
 {
 	struct ksqlstmt	*stmt;
+	struct meta	 meta;
+
+	/* Make sure the record exists. */
+
+	db_meta_get(r, &meta);
+	db_meta_unfill(&meta);
 
 	ksql_stmt_alloc(r->arg, &stmt, 
 		stmts[STMT_META_MOD_TITLE], 
@@ -1095,11 +1202,22 @@ sendmodlink(struct kreq *r, const struct user *u)
 }
 
 static void
+sendmodmetatemplate(struct kreq *r, const struct user *u)
+{
+	struct kpair	*kp;
+
+	kp = r->fieldmap[KEY_META_TEMPLATE];
+	db_mod_meta_template(r, u, NULL == kp ? "" : kp->parsed.s);
+	sendhttp(r, KHTTP_200);
+}
+
+
+static void
 sendmodmetatitle(struct kreq *r, const struct user *u)
 {
 	struct kpair	*kp;
 
-	kp = r->fieldmap[KEY_TITLE];
+	kp = r->fieldmap[KEY_META_TITLE];
 	db_mod_meta_title(r, u, NULL == kp ? "" : kp->parsed.s);
 	sendhttp(r, KHTTP_200);
 }
@@ -1214,6 +1332,8 @@ sendindex(struct kreq *r, const struct user *u)
 		kjson_objp_open(&req, "meta");
 		kjson_putstringp(&req, "title",
 			NULL == meta.title ? "" : meta.title);
+		kjson_putstringp(&req, "template",
+			NULL == meta.template ? "" : meta.template);
 		kjson_obj_close(&req);
 		db_meta_unfill(&meta);
 	} else
@@ -1304,7 +1424,8 @@ sendatom(struct kreq *r)
 	kxml_puts(&req, buf);
 	kxml_pop(&req);
 
-	snprintf(buf, sizeof(buf), "%s%s", r->pname, r->fullpath);
+	snprintf(buf, sizeof(buf), "%s://%s%s%s", 
+		kschemes[r->scheme], r->host, r->pname, r->fullpath);
 	kxml_pushnullattrs(&req, XML_LINK, 
 		"rel", "self", "href", buf, NULL);
 
@@ -1327,11 +1448,22 @@ sendatom(struct kreq *r)
 		KUTIL_EPOCH2TM(entry.ctime, &tm);
 
 		snprintf(buf, sizeof(buf),
-			"tag:%s,%.4d-%.2d-%.2d:%" PRId64, r->host, 
-			tm.tm_year + 1900, tm.tm_mon, tm.tm_mday, entry.id);
+			"tag:%s,%.4d-%.2d-%.2d:%" PRId64, 
+			r->host, tm.tm_year + 1900, 
+			tm.tm_mon, tm.tm_mday, entry.id);
 		kxml_push(&req, XML_ID);
 		kxml_puts(&req, buf);
 		kxml_pop(&req);
+
+		snprintf(buf, sizeof(buf), 
+			"%s://%s%s/%s.html?%s=%" PRId64, 
+			kschemes[r->scheme], r->host, 
+			r->pname, pages[PAGE_PUBLIC],
+			keys[KEY_ENTRYID].name, entry.id);
+		kxml_pushnullattrs(&req, XML_LINK, 
+			"rel", "alternate", 
+			"type", kmimetypes[KMIME_TEXT_HTML], 
+			"href", buf, NULL);
 
 		kutil_epoch2utcstr(entry.ctime, buf, sizeof(buf));
 		kxml_push(&req, XML_PUBLISHED);
@@ -1368,8 +1500,193 @@ sendatom(struct kreq *r)
 	db_meta_unfill(&meta);
 }
 
+static int
+sendtemplate(size_t key, void *arg)
+{
+	struct htmldata	*data = arg;
+	char		 buf[1024];
+
+	switch (key) {
+	case (TEMPL_ASIDE):
+		khtml_puts(data->req, NULL == data->entry.aside ? 
+			"" : data->entry.aside);
+		break;
+	case (TEMPL_AUTHOR_LINK):
+		khtml_puts(data->req, NULL == data->user.link ? 
+			"" : data->user.link);
+		break;
+	case (TEMPL_AUTHOR_NAME):
+		khtml_puts(data->req, data->user.name);
+		break;
+	case (TEMPL_CLASSES):
+		if (NULL != data->user.link)
+			khtml_puts(data->req, " author-has-link");
+		if (NULL != data->entry.aside)
+			khtml_puts(data->req, " blog-has-aside");
+		if (NULL != data->entry.image)
+			khtml_puts(data->req, " blog-has-image");
+		if (NULL != data->entry.aside &&
+		    NULL != data->entry.image)
+			khtml_puts(data->req, " blog-has-image-aside");
+		if (NULL != data->entry.aside &&
+		    NULL == data->entry.image)
+			khtml_puts(data->req, " blog-has-only-aside");
+		if (NULL == data->entry.aside &&
+		    NULL != data->entry.image)
+			khtml_puts(data->req, " blog-has-only-image");
+		if (data->entry.ctime == data->entry.mtime)
+			khtml_puts(data->req, " blog-has-only-ctime");
+		if (data->entry.ctime != data->entry.mtime)
+			khtml_puts(data->req, " blog-has-mtime");
+		if (data->entry.coords)
+			khtml_puts(data->req, " blog-has-coords");
+		break;
+	case (TEMPL_CANON):
+		snprintf(buf, sizeof(buf), 
+			"%s://%s%s/%s.html?%s=%" PRId64, 
+			kschemes[data->req->req->scheme], 
+			data->req->req->host, 
+			data->req->req->pname, pages[PAGE_PUBLIC],
+			keys[KEY_ENTRYID].name, data->entry.id);
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_CONTENT):
+		khtml_puts(data->req, data->entry.content);
+		break;
+	case (TEMPL_COORD_LAT_DECIMAL):
+		snprintf(buf, sizeof(buf), "%g", data->entry.lat);
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_COORD_LNG_DECIMAL):
+		snprintf(buf, sizeof(buf), "%g", data->entry.lng);
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_CTIME):
+		snprintf(buf, sizeof(buf), "%lld", 
+			(long long)data->entry.ctime);
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_CTIME_ISO_8601):
+		kutil_epoch2utcstr
+			(data->entry.ctime, buf, sizeof(buf));
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_IMAGE):
+		khtml_puts(data->req, NULL != data->entry.image ?
+			data->entry.image : "");
+		break;
+	case (TEMPL_MTIME):
+		snprintf(buf, sizeof(buf), "%lld", 
+			(long long)data->entry.mtime);
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_MTIME_ISO_8601):
+		kutil_epoch2utcstr
+			(data->entry.mtime, buf, sizeof(buf));
+		khtml_puts(data->req, buf);
+		break;
+	case (TEMPL_TITLE):
+		khtml_puts(data->req, data->entry.title);
+		break;
+	default:
+		abort();
+	}
+
+	return(1);
+}
+
+/*
+ * Our public-facing HTML side.
+ * This only prints a particular blog entry.
+ * Everything we print here is public.
+ * If "u" is non-NULL, however, it's also sent to the client.
+ */
 static void
-sendpublic(struct kreq *r, const struct user *u)
+sendpublichtml(struct kreq *r, const struct user *u)
+{
+	struct khead	*kr;
+	struct kpair	*kpi;
+	struct ksqlstmt	*stmt;
+	struct khtmlreq	 req;
+	struct htmldata	 data;
+	size_t		 i = 0;
+	char		 buf[64];
+	struct meta	 meta;
+	struct ktemplate t;
+
+	if (NULL == (kpi = r->fieldmap[KEY_ENTRYID])) {
+		sendhttp(r, KHTTP_404);
+		return;
+	}
+
+	db_meta_get(r, &meta);
+
+	if (NULL == meta.template) {
+		sendhttp(r, KHTTP_404);
+		return;
+	}
+
+	memset(&req, 0, sizeof(struct khtmlreq));
+	req.req = r;
+
+	memset(&data, 0, sizeof(struct htmldata));
+	data.u = u;
+	data.req = &req;
+
+	kr = r->reqmap[KREQU_IF_NONE_MATCH];
+
+	ksql_stmt_alloc(r->arg, &stmt, 
+		stmts[STMT_ENTRY_GET_PUBLIC], 
+		STMT_ENTRY_GET_PUBLIC);
+	ksql_bind_int(stmt, 0, kpi->parsed.i);
+
+	if (KSQL_ROW != ksql_stmt_step(stmt)) {
+		ksql_stmt_free(stmt);
+		sendhttp(r, KHTTP_404);
+		return;
+	}
+
+	db_user_fill(&data.user, stmt, &i);
+	db_entry_fill(&data.entry, stmt, &i);
+	ksql_stmt_free(stmt);
+
+	snprintf(buf, sizeof(buf), 
+		"\"%" PRId64 "\"", meta.mtime);
+
+	if (NULL != kr && 
+	    0 == strcmp(buf, kr->val)) {
+		sendhttp(r, KHTTP_304);
+		db_user_unfill(&data.user);
+		db_entry_unfill(&data.entry);
+		return;
+	} 
+
+	memset(&t, 0, sizeof(struct ktemplate));
+
+	t.key = templs;
+	t.keysz = TEMPL__MAX;
+	t.arg = &data;
+	t.cb = sendtemplate;
+
+	sendhttphead(r, KHTTP_200);
+	khttp_head(r, kresps[KRESP_ETAG], "%s", buf);
+	khttp_body(r);
+	if ( ! khttp_template(r, &t, DATADIR "/blog.html"))
+		kutil_warnx(r, NULL == u ? NULL : u->email, "%s", 
+			"khttp_template: " DATADIR "/blog.html");
+
+	db_user_unfill(&data.user);
+	db_entry_unfill(&data.entry);
+	db_meta_unfill(&meta);
+}
+
+/*
+ * Our public-facing JSON side.
+ * Everything we print here is public.
+ * If "u" is non-NULL, however, it's also sent to the client.
+ */
+static void
+sendpublicjson(struct kreq *r, const struct user *u)
 {
 	struct khead	*kr;
 	struct kpair	*kpi, *kplim, *kpo;
@@ -1616,11 +1933,21 @@ main(void)
 		sendhttp(&r, KHTTP_405);
 		khttp_free(&r);
 		return(EXIT_SUCCESS);
-	} else if (PAGE__MAX == r.page || 
-		   (KMIME_APP_JSON != r.mime && 
-		    PAGE_ATOM != r.page) ||
-		   (KMIME_TEXT_XML != r.mime &&
-		    PAGE_ATOM == r.page)) {
+	}
+
+	if (KMIME_APP_JSON != r.mime) {
+		if ((KMIME_TEXT_HTML == r.mime &&
+		     PAGE_PUBLIC != r.page) ||
+		    (KMIME_TEXT_XML == r.mime &&
+		     PAGE_ATOM != r.page) ||
+		    (KMIME_TEXT_XML != r.mime &&
+		     KMIME_TEXT_HTML != r.mime)) {
+			sendhttp(&r, KHTTP_404);
+			khttp_puts(&r, "Page not found.");
+			khttp_free(&r);
+			return(EXIT_SUCCESS);
+		}
+	} else if (PAGE_ATOM == r.page) {
 		sendhttp(&r, KHTTP_404);
 		khttp_puts(&r, "Page not found.");
 		khttp_free(&r);
@@ -1664,6 +1991,7 @@ main(void)
 
 	if ((PAGE_ADD_USER == r.page ||
 	     PAGE_MOD_META_TITLE == r.page ||
+	     PAGE_MOD_META_TEMPLATE == r.page ||
 	     PAGE_MOD_ENABLE == r.page) &&
 	    (NULL == u || ! (USER_ADMIN & u->flags))) {
 		sendhttp(&r, KHTTP_404);
@@ -1713,6 +2041,9 @@ main(void)
 	case (PAGE_MOD_LINK):
 		sendmodlink(&r, u);
 		break;
+	case (PAGE_MOD_META_TEMPLATE):
+		sendmodmetatemplate(&r, u);
+		break;
 	case (PAGE_MOD_META_TITLE):
 		sendmodmetatitle(&r, u);
 		break;
@@ -1723,7 +2054,10 @@ main(void)
 		sendmodpass(&r, u);
 		break;
 	case (PAGE_PUBLIC):
-		sendpublic(&r, u);
+		if (KMIME_TEXT_HTML == r.mime)
+			sendpublichtml(&r, u);
+		else
+			sendpublicjson(&r, u);
 		break;
 	case (PAGE_REMOVE):
 		sendremove(&r, u);

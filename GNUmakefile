@@ -77,7 +77,7 @@ sinclude GNUmakefile.local
 # Don't edit anything below here.
 
 OBJS	 = dblg.o
-HTMLS	 = dblg.html blog.html
+HTMLS	 = dblg.html blog.html blog-static.html
 JSMINS	 = dblg.min.js blog.min.js
 CSSS	 = dblg.css blog.css
 CFLAGS	+= -g -W -Wall -O2 $(SECURE)
@@ -108,6 +108,7 @@ installapi: api
 updatecgi: all
 	mkdir -p $(CGIBIN)
 	install -m 0555 dblg $(CGIBIN)/$(CGINAME)
+	install -m 0444 blog-static.html $(DATADIR)/blog.html
 
 installcgi: updatecgi
 	mkdir -p $(DATADIR)
@@ -133,7 +134,7 @@ dblg.db: dblg.sql
 	    -e 's!@AHASH@!$(AHASH)!' dblg.sql | sqlite3 $@
 
 dblg: $(OBJS)
-	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lkcgixml -lz -lksql -lsqlite3
+	$(CC) $(STATIC) -o $@ $(OBJS) $(LDFLAGS) -lkcgi -lkcgijson -lkcgihtml -lkcgixml -lz -lksql -lsqlite3
 
 dblg.json: dblg.in.json
 	@rm -f $@
