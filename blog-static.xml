@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<meta charset="utf-8" /> 
+		<title>dblg :: static blog viewer</title>
+		<style>
+			body { margin: auto 20%; }
+			article .blog-image-box { display: none; }
+			article .blog-aside-box { display: none; }
+			article .blog-coord-box { display: none; }
+			article.blog-has-image .blog-image-box { display: block; }
+			article.blog-has-aside .blog-aside-box { display: block; }
+			article.blog-has-coords .blog-coords-box { display: block; }
+			article img { max-width: 100%; }
+		</style>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/showdown/1.4.3/showdown.min.js"></script>
+		<script>
+			//<![CDATA[
+			window.addEventListener('load', function(){
+				var list, conv, i, res, text;
+				console.log('here');
+				if (typeof showdown === 'undefined')
+					return;
+				conv = new showdown.Converter();
+				list = document.getElementsByClassName('markdown');
+				console.log('length = ' + list.length);
+				for (i = 0; i < list.length; i++) {
+					text = list[i].textContent;
+					if (null === text || 0 === text.length)
+						continue;
+					res = conv.makeHtml(text);
+					list[i].innerHTML = res;
+				}
+			});
+			//]]>
+		</script>
+	</head>
+	<body>
+		<article class="@@dblg-classes@@">
+			<div class="blog-title">
+				<div><strong>Title</strong></div>
+				<div>@@dblg-title@@</div>
+			</div>
+			<div class="blog-aside-box">
+				<div><strong>Aside</strong></div>
+				<div class="markdown">@@dblg-aside@@</div>
+			</div>
+			<div class="blog-content">
+				<div><strong>Content</strong></div>
+				<div class="markdown">@@dblg-content@@</div>
+			</div>
+			<div>
+				<div><strong>Canonical link</strong></div>
+				<div><a href="@@dblg-canon@@">Here</a>.</div>
+			</div>
+			<div>
+				<div><strong>Author</strong></div>
+				<div><a class="blog-author">@@dblg-author-name@@</a></div>
+			</div>
+			<div class="blog-image-box">
+				<div><strong>Image</strong></div>
+				<div><a href="@@dblg-image@@" class="blog-image"><img src="@@dblg-image@@" /></a></div>
+			</div>
+			<div class="blog-coord-box">
+				<div><strong>Coordinates</strong></div>
+				<div>@@dblg-coord-lat-decimal@@, @@dblg-coord-lng-decimal@@</div>
+			</div>
+			<div>
+				<div><strong>Dates</strong></div>
+				<div>
+					<span class="blog-mtime-box">
+						<span class="blog-mtime">@@dblg-mtime-iso8601@@</span>
+						(updated),
+					</span>
+					<span class="blog-ctime-box">
+						<span class="blog-ctime">@@dblg-ctime-iso8601@@</span>
+					</span>
+				</div>
+			</div>
+		</article>
+	</body>
+</html>
