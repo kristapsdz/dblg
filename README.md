@@ -231,6 +231,31 @@ administration page and provide a template that will be filled in by the
 back-end and passed to the front-end.  A sample is provided in
 [blog-static.xml](blog-static.xml).
 
+The following template keys are populated:
+
+- `dblg-aside`: aside content (Markdown)
+- `dblg-author-link`: link to author, if given (otherwise blank)
+- `dblg-author-name`: author name
+- `dblg-canon`: canonical link to blog entry
+- `dblg-canon-query`: blog entry query string
+- `dblg-classes`: a string consisting of zero or more `author-has-link`,
+  `blog-has-aside`, `blog-has-image`, `blog-has-image-aside`,
+  `blog-has-only-aside`, `blog-has-only-image`, `blog-has-only-ctime`,
+  `blog-has-mtime`, `blog-has-coords` (explanation fairly self
+  explanatory)
+- `dblg-content`: content (Markdown)
+- `dblg-coord-lat-decimal`: latitude decimal (if coordinates given,
+  else empty)
+- `dblg-coord-lng-decimal`: longitude decimal (if coordinates given,
+  else empty)
+- `dblg-ctime`: epoch date of creation time
+- `dblg-ctime-iso8601`: ISO 8601 formatted creation time
+- `dblg-image`: blog image (if given)
+- `dblg-mtime`: epoch date modification time (starting with creation
+  time)
+- `dblg-mtime-iso8601`: ISO 8601 formatted modification time
+- `dblg-title`: entry title (*not* Markdown)
+
 ## License
 
 All sources use the ISC (like OpenBSD) license.
