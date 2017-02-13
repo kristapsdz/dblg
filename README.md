@@ -14,7 +14,7 @@ It has three components:
 [dblg.c](dblg.c).  It links to [kcgi](https://kristaps.bsd.lv/kcgi) and
 [ksql](https://kristaps.bsd.lv/ksql), and uses
 [SQLite](https://sqlite.org) for its backing store.  It produces JSON
-objects or an Atom feed (**experimental**), so it can be driven by any
+objects, an Atom feed, or static HTML5 so it can be driven by any
 front-end conforming to its expectations.
 
 2. An editing front-end, [dblg.xml](dblg.xml), [dblg.css](dblg.css), and
@@ -31,7 +31,11 @@ kind of a PITA.
 will want to be filled in with blog content, which they can do by
 including the JavaScript file [blog.js](blog.js) and having an HTML
 element with identifier `blog` filled-in as in the reference.  Your page
-will then invoke the script when desired.
+will then invoke the script when desired.  A static version of blog
+front-end, [blog-static.xml](blog-static.xml), is provided (though it
+must be configured by the administrator) to have static blog content.
+The latter is required if you want your blog spidered.  I use both: one
+for "blog" front matter and the other for permanent-link articles.
 
 This tool is still under development, as is its documentation.  For a
 view of it working, see my [diving blog](https://divelog.blue).
@@ -54,7 +58,8 @@ Some features:
 - Strong HTTP caching with etags, full compression support.
 - Security: cookies with security extensions and full support for CSP
   (no in-line JavaScript)
-- Atom feed support (**experimental**).
+- Atom feed support.
+- Static HTML support.
 
 The default editor front-end uses [moment.js](http://momentjs.com/) for
 formatting dates, [clipboard.js](https://clipboardjs.com/) for copying
@@ -65,7 +70,7 @@ authorisation.
 The default viewer optionally (but *strongly* recommended) uses
 [moment.js](http://momentjs.com/) and
 [showdown](https://github.com/showdownjs/showdown) for formatting
-MarkDown.
+MarkDown.  The default static page also uses showdown.
 
 ## Documentation
 
@@ -104,6 +109,11 @@ To install the editor tools, use `make installserver`.  This will only
 install the HTML, JavaScript, and CSS for the editor.
 
 ### Viewer front-end
+
+There are two ways of "viewing" blog content.  The first is to
+dynamically load using JSON; the second, static HTML.
+
+#### Dynamic content
 
 To install the viewer, you don't need to download this software.  Simply
 reference the existing [blog.xml](blog.xml) and [blog.css](blog.css),
@@ -212,6 +222,14 @@ element given the noted conditions.
 
 After filling in these fields for each blog entry, the `hide` class is
 removed from the root element.
+
+#### Static content
+
+Static content is full-formed HTML5 produced by the back-end.  To use
+this mode, which is not enabled by default, you'll need to enter the
+administration page and provide a template that will be filled in by the
+back-end and passed to the front-end.  A sample is provided in
+[blog-static.xml](blog-static.xml).
 
 ## License
 

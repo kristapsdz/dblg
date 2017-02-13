@@ -58,6 +58,7 @@ enum	templ {
 	TEMPL_AUTHOR_LINK,
 	TEMPL_AUTHOR_NAME,
 	TEMPL_CANON,
+	TEMPL_CANON_QUERY,
 	TEMPL_CLASSES,
 	TEMPL_CONTENT,
 	TEMPL_COORD_LAT_DECIMAL,
@@ -243,6 +244,7 @@ static const char *const templs[TEMPL__MAX] = {
 	"dblg-author-link", /* TEMPL_AUTHOR_LINK */
 	"dblg-author-name", /* TEMPL_AUTHOR_NAME */
 	"dblg-canon", /* TEMPL_CANON */
+	"dblg-canon-query", /* TEMPL_CANON_QUERY */
 	"dblg-classes", /* TEMPL_CLASSES */
 	"dblg-content", /* TEMPL_CONTENT */
 	"dblg-coord-lat-decimal", /* TEMPL_COORD_LAT_DECIMAL */
@@ -314,13 +316,13 @@ static	const char *const stmts[STMT__MAX] = {
 	/* STMT_META_GET */
 	"SELECT " META " FROM meta LIMIT 1",
 	/* STMT_META_MOD_TEMPLATE */
-	"UPDATE meta (mtime,template) VALUES (?,?)",
+	"UPDATE meta SET mtime=?,template=?",
 	/* STMT_META_MOD_TITLE */
-	"UPDATE meta (mtime,title) VALUES (?,?)",
+	"UPDATE meta SET mtime=?,title=?",
 	/* STMT_META_NEW */
 	"INSERT INTO meta (mtime) VALUES (?)",
 	/* STMT_META_UPDATE */
-	"UPDATE meta (mtime) VALUES (?)",
+	"UPDATE meta SET mtime=?",
 	/* STMT_SESS_DEL */
 	"DELETE FROM sess WHERE id=? AND cookie=?",
 	/* STMT_SESS_GET */
@@ -1550,6 +1552,11 @@ sendtemplate(size_t key, void *arg)
 			keys[KEY_ENTRYID].name, data->entry.id);
 		khtml_puts(data->req, buf);
 		break;
+	case (TEMPL_CANON_QUERY):
+		snprintf(buf, sizeof(buf), "%s=%" PRId64, 
+			keys[KEY_ENTRYID].name, data->entry.id);
+		khtml_puts(data->req, buf);
+		break;
 	case (TEMPL_CONTENT):
 		khtml_puts(data->req, data->entry.content);
 		break;
@@ -1611,6 +1618,7 @@ sendpublichtml(struct kreq *r, const struct user *u)
 	struct htmldata	 data;
 	size_t		 i = 0;
 	char		 buf[64];
+	char		*fbuf;
 	struct meta	 meta;
 	struct ktemplate t;
 
@@ -1668,16 +1676,19 @@ sendpublichtml(struct kreq *r, const struct user *u)
 	t.arg = &data;
 	t.cb = sendtemplate;
 
+	kasprintf(&fbuf, "%s", meta.template);
+
 	sendhttphead(r, KHTTP_200);
 	khttp_head(r, kresps[KRESP_ETAG], "%s", buf);
 	khttp_body(r);
-	if ( ! khttp_template(r, &t, DATADIR "/blog.html"))
-		kutil_warnx(r, NULL == u ? NULL : u->email, "%s", 
-			"khttp_template: " DATADIR "/blog.html");
+	if ( ! khttp_template(r, &t, fbuf))
+		kutil_warnx(r, NULL == u ? NULL : u->email, 
+			"khttp_template: %s", fbuf);
 
 	db_user_unfill(&data.user);
 	db_entry_unfill(&data.entry);
 	db_meta_unfill(&meta);
+	free(fbuf);
 }
 
 /*
