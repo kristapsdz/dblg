@@ -229,7 +229,9 @@ Static content is full-formed HTML5 produced by the back-end.  To use
 this mode, which is not enabled by default, you'll need to enter the
 administration page and provide a template that will be filled in by the
 back-end and passed to the front-end.  A sample is provided in
-[blog-static.xml](blog-static.xml).
+[blog-static.xml](blog-static.xml).  This is not installed by default:
+you'll need to copy it into your web root and point to it in the
+administrative console.
 
 The following template keys are populated:
 
